@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Places Wishlist</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="add_button">Add</string>
+    <string name="api_key" translatable="false">AIzaSyAeZ3dQwjte6xnwYUrsFK7ERaf5UXDGO2g</string>
+    <string name="add_a_place">Add a place</string>
+    <string name="share">Share</string>
+</resources>
