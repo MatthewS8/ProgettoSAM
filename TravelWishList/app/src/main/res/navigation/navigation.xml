@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/navigation"
+    app:startDestination="@id/list_fragment">
+
+    <fragment
+        android:id="@+id/list_fragment"
+        android:name="com.github.matthews8.travelwishlist.list_fragment"
+        android:label="fragment_list_fragment"
+        tools:layout="@layout/fragment_list_fragment" >
+        <action
+            android:id="@+id/action_list_fragment_to_temp"
+            app:destination="@id/temp" />
+    </fragment>
+    <fragment
+        android:id="@+id/temp"
+        android:name="com.github.matthews8.travelwishlist.temp"
+        android:label="fragment_temp"
+        tools:layout="@layout/fragment_temp" />
+</navigation>

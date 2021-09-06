@@ -5,10 +5,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 
 @Entity(tableName = "user_table")
 data class User(
-    @PrimaryKey(autoGenerate = true)
-    var userId: Long = 0L,
-
-    @ColumnInfo
+    @PrimaryKey()
     var username: String = "owner",
 
     @ColumnInfo

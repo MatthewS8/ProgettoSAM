@@ -10,10 +10,11 @@ import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.github.matthews8.placeswishlist.BuildConfig
 import com.github.matthews8.placeswishlist.R
 import com.github.matthews8.placeswishlist.database.FavPlacesDatabase
+import com.github.matthews8.placeswishlist.database.Place
 import com.github.matthews8.placeswishlist.databinding.FragmentMapsBinding
 import com.google.android.gms.common.api.Status
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -21,12 +22,12 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.AddressComponents
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken
-import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.model.Place as gPlace
 import com.google.android.libraries.places.api.net.PlacesStatusCodes
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
-import kotlinx.coroutines.launch
 
 class MapsFragment : Fragment() {
     private lateinit var viewModel: MapsFragmentViewModel
@@ -35,50 +36,62 @@ class MapsFragment : Fragment() {
     private val callback = OnMapReadyCallback {googleMap ->
 
         viewModel.gmap = googleMap
-        viewModel.initializeMap()
 
         googleMap.setOnMapClickListener { latLng ->
-            viewModel.geoDone = false
-            //TODO getPlace
 
-            //Rimuovo il marker precedente
-            viewModel.lastMarker.value?.remove() ?:
-            viewModel.lastMarker.observe(this, Observer{
-                if(it?.title != "" || it.title != "No Title")
-                    it?.showInfoWindow()
-            })
+            if(viewModel.isMarkerInitialized()) {
+                //Rimuovo il marker precedente
+                viewModel.lastMarker.remove()
+            }
 
-            val mark = googleMap.addMarker(
-                MarkerOptions()
-                    .position(latLng)
-                    .title("")
-            )
-            viewModel.lastMarker.value = mark
-
-            viewModel.onMarkerAdded() // TODO Check this out
-
-
+            viewModel.addMarker(latLng)
 
         }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         val application = requireNotNull(this.activity).application
         val dataSource = FavPlacesDatabase.getInstance(application).favPlacesDatabaseDao
         val viewModelFactory = MapsFrafmentViewModelFactory(dataSource, application)
         viewModel = ViewModelProvider(this, viewModelFactory)
             .get(MapsFragmentViewModel::class.java)
 
-        Places.initialize(requireContext(), getString(R.string.api_key))
+        Places.initialize(requireContext(), BuildConfig.GOOGLE_MAPS_API_KEY)
         val placesClient = Places.createClient(this.requireContext())
 
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_maps,container, false)
+        binding.mapsFragmentViewModel = viewModel
         binding.addButton.setOnClickListener {
-            findNavController().navigate(MapsFragmentDirections.actionMapsFragmentToMainFragment())
+            viewModel.onDoneClicked()
         }
 
+        viewModel.citiesList.observe(viewLifecycleOwner, Observer {
+            Log.i("cityList","city is $it}")
+            if(viewModel.gmap != null && it != null) {
+                Log.i("cityList","city is ready $it}")
+                viewModel.initializeMap()
+            }
+        })
+        viewModel.navigateToMainFragment.observe(viewLifecycleOwner, Observer {
+            if(it != null) {
+                findNavController().navigate(MapsFragmentDirections.actionMapsFragmentToMainFragment())
+                viewModel.doneNavigating()
+            }
+        })
 
+        viewModel.navigateToDialog.observe(viewLifecycleOwner, Observer {
+            it?.let {findNavController()
+                .navigate(MapsFragmentDirections
+                    .actionMapsFragmentToChoiceDialog(
+                        viewModel.place!!.address,
+                        viewModel.city.value!!.name
+                    + ", ${viewModel.city.value!!.country}"))
+            }
+        })
+
+
+        binding.setLifecycleOwner(this)
         return binding.root
     }
 
@@ -92,10 +105,21 @@ class MapsFragment : Fragment() {
         acFrag.setPlaceFields(viewModel.placeField)
         mapFragment?.getMapAsync(callback)
         acFrag.setOnPlaceSelectedListener(object : PlaceSelectionListener{
-            override fun onPlaceSelected(place: Place) {
+            override fun onPlaceSelected(place: gPlace) {
                 //todo- ------------------------------
-                Toast.makeText(context, "Place: ${place.name}, ${place.address} ${place.latLng}",Toast.LENGTH_LONG).show()
-                viewModel.gmap?.animateCamera(CameraUpdateFactory.newLatLngZoom(place.latLng,10f))
+                Log.i("PlaceSelected",
+                    "place: ${place.name}, ${place.address} ${place.latLng} ${place.addressComponents} ${place.types}")
+                viewModel.addMarker(place.latLng!!, place)
+
+                var zoom = 10f
+                place.types?.let {
+                    if (it.contains(gPlace.Type.TOURIST_ATTRACTION)
+                        || it.contains(gPlace.Type.POINT_OF_INTEREST)
+                        || it.contains(gPlace.Type.ESTABLISHMENT) )
+                        zoom = 15f
+                }
+                viewModel.gmap?.animateCamera(CameraUpdateFactory.newLatLngZoom(place.latLng!!, zoom))
+
             }
 
             override fun onError(status: Status) {

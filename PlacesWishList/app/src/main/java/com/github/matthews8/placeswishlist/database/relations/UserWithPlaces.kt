@@ -10,7 +10,7 @@ import com.github.matthews8.placeswishlist.database.User
 data class UserWithPlaces(
     @Embedded val user: User,
     @Relation(
-        parentColumn = "userId",
+        parentColumn = "username",
         entityColumn = "placeId",
         associateBy = Junction(PlaceUsersCrossReference::class)
     )

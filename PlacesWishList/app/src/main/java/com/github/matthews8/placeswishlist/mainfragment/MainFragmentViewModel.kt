@@ -3,7 +3,11 @@ package com.github.matthews8.placeswishlist.mainfragment
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.*
+import com.github.matthews8.placeswishlist.database.City
+import com.github.matthews8.placeswishlist.database.DatabaseDaoHelper
 import com.github.matthews8.placeswishlist.database.FavPlacesDatabaseDao
+import com.google.android.gms.maps.model.LatLng
+import kotlinx.coroutines.launch
 import java.lang.IllegalArgumentException
 
 class MainFragmentViewModel(
@@ -37,7 +41,7 @@ class MainFragmentViewModel(
         lng = LatLng(41.461761, 15.545021).longitude,
         name = "Foggia",
         country = "Italy"
-    )
+    ) */
     var munich: City = City(
         cityId = 4,
         lat =  LatLng(48.137154, 11.576124).latitude,
@@ -46,10 +50,15 @@ class MainFragmentViewModel(
         country = "Germany"
     )
 
-    val pL = listOf(pisa, firenze, bologna, foggia, munich)*/
+    /*val pL = listOf(pisa, firenze, bologna, foggia, munich)*/
 
 
     var citiesList = database.getCities()
+//    init {
+//        viewModelScope.launch {
+//            DatabaseDaoHelper(database, application).insertPlaceAndCityWithOwner(munich)
+//        }
+//    }
 
     override fun onCleared() {
         super.onCleared()
@@ -70,3 +79,9 @@ class MainFragmentViewModelFactory(
     }
 
 }
+
+data class PippoTest(
+    val str: String,
+    val pippo: Long,
+    val pluto: LatLng = LatLng(0.0,0.0)
+)

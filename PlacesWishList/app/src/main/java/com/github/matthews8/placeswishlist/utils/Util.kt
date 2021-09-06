@@ -1,4 +1,4 @@
-package com.github.matthews8.placeswishlist
+package com.github.matthews8.placeswishlist.utils
 
 import android.content.Context
 import android.net.ConnectivityManager
@@ -6,10 +6,14 @@ import android.net.NetworkCapabilities
 import android.net.NetworkInfo
 import android.os.Build
 import androidx.annotation.RequiresPermission
+import com.google.android.gms.maps.model.LatLng
+import java.nio.channels.SocketChannel
+
 
 @RequiresPermission("android.permission.ACCESS_NETWORK_STATE")
-fun isOnline(context: Context) : Boolean {
-    val connManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+fun isOnline(context: Context): Boolean {
+    val connManager =
+        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     val network = connManager.activeNetwork ?: return false
     val networkCapabilities = connManager.getNetworkCapabilities(network) ?: return false
     return when {

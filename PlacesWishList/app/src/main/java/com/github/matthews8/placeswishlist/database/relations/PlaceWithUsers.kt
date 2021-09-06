@@ -11,7 +11,7 @@ data class PlaceWithUsers(
     @Embedded val place: Place,
     @Relation(
         parentColumn = "placeId",
-        entityColumn = "userId",
+        entityColumn = "username",
         associateBy = Junction(PlaceUsersCrossReference::class)
     )
     val users: List<User>

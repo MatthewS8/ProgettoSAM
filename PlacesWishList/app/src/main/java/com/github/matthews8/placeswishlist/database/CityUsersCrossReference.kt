@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 
 @Entity(tableName = "city_user_cross_table",
-    primaryKeys = ["cityId", "userId"],
+    primaryKeys = ["cityId", "username"],
     foreignKeys = [
         ForeignKey(
             entity = City::class,
@@ -14,13 +14,13 @@ import androidx.room.ForeignKey
             onUpdate = ForeignKey.CASCADE),
         ForeignKey(
             entity = User::class,
-            parentColumns = arrayOf("userId"),
-            childColumns = arrayOf("userId"),
+            parentColumns = arrayOf("username"),
+            childColumns = arrayOf("username"),
             onDelete = ForeignKey.CASCADE,
             onUpdate = ForeignKey.CASCADE)]
 )
 data class CityUsersCrossReference(
     val cityId: Long,
-    val userId: Long,
+    val username: String,
 )
 

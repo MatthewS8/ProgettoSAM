@@ -11,7 +11,7 @@ data class CityWithUsers(
     @Embedded val city: City,
     @Relation(
         parentColumn = "cityId",
-        entityColumn = "userId",
+        entityColumn = "username",
         associateBy = Junction(CityUsersCrossReference::class)
     )
     val users: List<User>

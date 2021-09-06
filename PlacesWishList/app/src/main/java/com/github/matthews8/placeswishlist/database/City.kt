@@ -7,7 +7,7 @@ import com.google.android.gms.maps.model.LatLng
 @Entity(
     tableName = "city_table",
     indices = [Index(value = ["name", "country"], //TODO test whether unique is the name+country set
-        unique = true)],                          //  or each is unique -- in this case it-s a problem
+        unique = true)], //  or each is unique -- in this case it-s a problem
 )
 data class City(
     @PrimaryKey(autoGenerate = true)

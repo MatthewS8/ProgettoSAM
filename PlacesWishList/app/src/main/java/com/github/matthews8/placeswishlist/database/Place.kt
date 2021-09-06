@@ -36,7 +36,7 @@ data class Place(
     var type: Place.Type? = null,
 
     @ColumnInfo(name = "icon")
-    var iconUrl: String?,
+    var iconUrl: String? = null,
 
     @ColumnInfo (index = true)
     var cityId: Long,

@@ -24,5 +24,20 @@
             app:destination="@id/mainFragment"
             app:popUpTo="@id/mainFragment"
             app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_mapsFragment_to_choiceDialog"
+            app:destination="@id/choiceDialog" />
     </fragment>
+    <dialog
+        android:id="@+id/choiceDialog"
+        android:name="com.github.matthews8.placeswishlist.mapsfragment.ChoiceDialog"
+        android:label="ChoiceDialog"
+        tools:layout="@layout/choice_dialog">
+        <argument
+            android:name="option1"
+            app:argType="string" />
+        <argument
+            android:name="option2"
+            app:argType="string" />
+    </dialog>
 </navigation>
