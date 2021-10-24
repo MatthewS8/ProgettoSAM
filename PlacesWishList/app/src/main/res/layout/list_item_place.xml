@@ -25,42 +25,72 @@ xmlns:tools="http://schemas.android.com/tools">
             android:layout_height="match_parent">
 
             <TextView
-                android:id="@+id/city_name_text"
+                android:id="@+id/place_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
-                app:layout_constraintBottom_toTopOf="@+id/country_name_text"
-                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/marker_image"
                 app:layout_constraintTop_toTopOf="parent"
                 android:layout_marginStart="5dp"
-                tools:text="Pisa"
+                tools:text="Eiffel Tower"
                 android:text="@{place.name}"/>
 
-<!--            <TextView-->
-<!--                android:id="@+id/country_name_text"-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:textAlignment="textStart"-->
-<!--                android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"-->
-<!--                android:textColor="@android:color/darker_gray"-->
-<!--                app:layout_constraintBottom_toBottomOf="parent"-->
-<!--                app:layout_constraintEnd_toStartOf="@+id/directions_icon_image"-->
-<!--                app:layout_constraintHorizontal_bias="0.0"-->
-<!--                app:layout_constraintStart_toStartOf="@id/city_name_text"-->
-<!--                app:layout_constraintTop_toBottomOf="@id/city_name_text"-->
-<!--                tools:text="Italy"-->
-<!--                android:text="@{city.country}"/>-->
+            <TextView
+                android:id="@+id/place_address"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="5"
+                android:singleLine="false"
+                android:text="@{place.address}"
+                android:textAlignment="textStart"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+                android:textColor="@android:color/darker_gray"
+                app:layout_constraintBottom_toTopOf="@+id/place_type"
+                app:layout_constraintEnd_toStartOf="@+id/friends_image"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="@id/place_name"
+                app:layout_constraintTop_toBottomOf="@id/place_name"
+                tools:text="via scappa scappa n 33 France, Parigi europe earth" />
+
+            <TextView
+                android:id="@+id/place_type"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:ellipsize="end"
+                android:maxLines="5"
+                android:singleLine="false"
+                android:text="@{place.type.toString()}"
+                android:textAlignment="textStart"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+                android:textColor="@android:color/darker_gray"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/friends_image"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="@id/place_address"
+                app:layout_constraintTop_toBottomOf="@id/place_address"
+                tools:text="via scappa scappa n 33 France, Parigi" />
 
             <ImageView
-                android:id="@+id/directions_icon_image"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="16dp"
-                android:contentDescription="@string/share"
+                android:id="@+id/marker_image"
+                android:layout_width="61dp"
+                android:layout_height="51dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/place_name"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/location_icon_icons_com_50109" />
+
+            <ImageView
+                android:id="@+id/friends_image"
+                android:layout_width="48dp"
+                android:layout_height="41dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:srcCompat="@android:drawable/ic_menu_directions" />
+                app:srcCompat="@drawable/ic_baseline_group_24" />
+
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.card.MaterialCardView>

@@ -29,7 +29,6 @@ data class City(
     var visited: Boolean = false,
 
 
-
    /* @Ignore
     var imgeUrl: String? = null,*/
 

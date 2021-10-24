@@ -10,7 +10,9 @@ import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.Navigation
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import com.github.matthews8.placeswishlist.BuildConfig
 import com.github.matthews8.placeswishlist.R
 import com.github.matthews8.placeswishlist.database.FavPlacesDatabase
@@ -32,20 +34,17 @@ import com.google.android.libraries.places.widget.listener.PlaceSelectionListene
 class MapsFragment : Fragment() {
     private lateinit var viewModel: MapsFragmentViewModel
     private lateinit var binding: FragmentMapsBinding
-
+    val TAG = "Fede_NArgi"
+    val args: MapsFragmentArgs by navArgs()
     private val callback = OnMapReadyCallback {googleMap ->
 
         viewModel.gmap = googleMap
 
+
+
+        Log.i("OnMapsCallback", "OnMapsCallback: Callback triggered ")
         googleMap.setOnMapClickListener { latLng ->
-
-            if(viewModel.isMarkerInitialized()) {
-                //Rimuovo il marker precedente
-                viewModel.lastMarker.remove()
-            }
-
             viewModel.addMarker(latLng)
-
         }
     }
 
@@ -53,6 +52,7 @@ class MapsFragment : Fragment() {
     ): View {
         val application = requireNotNull(this.activity).application
         val dataSource = FavPlacesDatabase.getInstance(application).favPlacesDatabaseDao
+        if(args.fromMainFragment) MapsFrafmentViewModelFactory.setInstanceToNull() //seems to work now but check if there are problems here
         val viewModelFactory = MapsFrafmentViewModelFactory(dataSource, application)
         viewModel = ViewModelProvider(this, viewModelFactory)
             .get(MapsFragmentViewModel::class.java)
@@ -62,22 +62,19 @@ class MapsFragment : Fragment() {
 
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_maps,container, false)
         binding.mapsFragmentViewModel = viewModel
-        binding.addButton.setOnClickListener {
-            viewModel.onDoneClicked()
-        }
 
         viewModel.citiesList.observe(viewLifecycleOwner, Observer {
-            Log.i("cityList","city is $it}")
             if(viewModel.gmap != null && it != null) {
-                Log.i("cityList","city is ready $it}")
                 viewModel.initializeMap()
             }
+            Log.i(TAG, "onCreateView: citiesList trigger")
         })
         viewModel.navigateToMainFragment.observe(viewLifecycleOwner, Observer {
             if(it != null) {
                 findNavController().navigate(MapsFragmentDirections.actionMapsFragmentToMainFragment())
                 viewModel.doneNavigating()
             }
+            Log.i(TAG, "onCreateView: navigate to MAIN fragment ")
         })
 
         viewModel.navigateToDialog.observe(viewLifecycleOwner, Observer {
@@ -87,7 +84,19 @@ class MapsFragment : Fragment() {
                         viewModel.place!!.address,
                         viewModel.city.value!!.name
                     + ", ${viewModel.city.value!!.country}"))
+                viewModel.doneNavigatingToDialog()
             }
+            Log.i(TAG, "onCreateView:navigate to dialog ${viewModel.navigateToDialog.value}")
+        })
+
+        viewModel.choice.observe(viewLifecycleOwner, Observer {
+            it?.let {
+                viewModel.choiceDone()
+                findNavController().navigate(MapsFragmentDirections
+                    .actionMapsFragmentToMainFragment())
+            }
+            Log.i(TAG, "onCreateView: choice trigger and its value is ${viewModel.choice.value}")
+
         })
 
 
@@ -127,20 +136,21 @@ class MapsFragment : Fragment() {
                 when(status.statusCode){
                     PlacesStatusCodes.NOT_FOUND -> {}
                     PlacesStatusCodes.INVALID_REQUEST -> {}
+                    PlacesStatusCodes.CANCELED -> {}
                     else -> {}
                 }
-                Toast.makeText(context, "an error occured. check the log", Toast.LENGTH_LONG).show()
-                Log.i("MapsFragment", "An error occurred: $status")
+                Toast.makeText(context, "an error occured. check the log $status", Toast.LENGTH_LONG).show()
+                Log.i(TAG, "oNPLACESELECTED: An error occurred: $status")
             }
         })
     }
-}
 
-//TODO TO ADD A MARKER ON TAP
-/**
- * map.setOnMapClickListener {
- *   allPoints.add(it)
- *   map.clear()
- *   map.addMarker(MarkerOptions().position(it))
- * }
- */
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.i(TAG, "onDestroy: viewModel ${viewModel.choice.value}")
+        //To avoid the view model reset due to screen rotation
+//        if(viewModel.choice.value != null) {
+//            MapsFrafmentViewModelFactory.setInstanceToNull()
+//        }
+    }
+}

@@ -6,4 +6,9 @@
     <string name="share">Share</string>
     <string name="choose_dialog">Which one you want to choose</string>
     <string name="visited">Visited place</string>
+    <string name="err_message"> Something went wrong. Please retry later</string>
+    <string name="done_button">Done</string>
+    <string name="bluetooth_Button">Receive from bluetooth</string>
+    <string name="bluetooth_enable_fail">You need to enable bluetooth to continue</string>
+    <string name="bluetooth_request_denied">You need to grant permissions to use this feature</string>
 </resources>

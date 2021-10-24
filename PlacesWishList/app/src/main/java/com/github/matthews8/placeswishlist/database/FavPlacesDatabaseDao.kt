@@ -1,12 +1,13 @@
 package com.github.matthews8.placeswishlist.database
 
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.room.*
-import com.github.matthews8.placeswishlist.database.relations.CitiesWithPlacesAndUsers
 import com.github.matthews8.placeswishlist.database.relations.CityWithPlaces
-import com.github.matthews8.placeswishlist.database.relations.CityWithUsers
-import com.github.matthews8.placeswishlist.database.relations.UserWithPlaces
+import com.github.matthews8.placeswishlist.database.relations.CityWithPlacesAndUsers
 
+
+//TODO ho letto su stackoverflow che dovrei usare MutableLiveData per le query con Transaction
 @Dao
 interface   FavPlacesDatabaseDao {
 
@@ -52,12 +53,19 @@ interface   FavPlacesDatabaseDao {
     suspend fun getUser(username: String): User?
 
     @Transaction
-    @Query("SELECT * FROM city_table")
-    suspend fun getCitiesWithPlaces(): List<CityWithPlaces>
+    @Query("SELECT * FROM city_table WHERE cityId = :cityId")
+    fun getPlacesByCity(cityId: Long): LiveData<CityWithPlaces?>
 
     @Transaction
-    @Query("SELECT * FROM city_table WHERE cityId = :key")
-    fun getPlacesByCity(key: Long): List<CityWithPlaces>
+    @Query("SELECT * FROM city_table")
+    fun getCitiesWithPlaces(): LiveData<List<CityWithPlaces>>
+
+    @Transaction
+    @Query("SELECT * FROM city_table WHERE cityId = :cityId")
+    fun getCityWithPlacesAndUsers(cityId: Long): LiveData<CityWithPlacesAndUsers?>
+
+    @Query("SELECT * FROM place_table WHERE cityId = :cityId")
+    fun myPersonalQuery(cityId: Long): LiveData<List<Place>>
 
     @Query("DELETE FROM city_table WHERE cityId = :cityId ")
     suspend fun deleteCity(cityId: Long)

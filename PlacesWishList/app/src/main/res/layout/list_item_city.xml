@@ -9,6 +9,9 @@ xmlns:tools="http://schemas.android.com/tools">
         <variable
             name="city"
             type="com.github.matthews8.placeswishlist.database.City"/>
+        <variable
+            name="cityClickListener"
+            type="com.github.matthews8.placeswishlist.mainfragment.CityListener" />
     </data>
 
     <com.google.android.material.card.MaterialCardView
@@ -18,7 +21,8 @@ xmlns:tools="http://schemas.android.com/tools">
         app:cardCornerRadius="4dp"
         app:cardElevation="4dp"
         app:cardUseCompatPadding="true"
-        app:contentPadding="8dp">
+        app:contentPadding="8dp"
+        android:onClick="@{() -> cityClickListener.onClick(city)}">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -44,7 +48,7 @@ xmlns:tools="http://schemas.android.com/tools">
                 android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
                 android:textColor="@android:color/darker_gray"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/directions_icon_image"
+                app:layout_constraintEnd_toStartOf="@+id/visited"
                 app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="@id/city_name_text"
                 app:layout_constraintTop_toBottomOf="@id/city_name_text"
@@ -52,15 +56,16 @@ xmlns:tools="http://schemas.android.com/tools">
                 android:text="@{city.country}"/>
 
             <ImageView
-                android:id="@+id/directions_icon_image"
+                android:id="@+id/visited"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:layout_marginEnd="10dp"
                 android:contentDescription="@string/visited"
+                android:onClick="@{() -> cityClickListener.onIconClick(city)}"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:srcCompat="@android:drawable/ic_menu_myplaces" />
+                app:srcCompat="@android:drawable/ic_menu_myplaces"/>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.card.MaterialCardView>

@@ -13,6 +13,12 @@
         <action
             android:id="@+id/action_mainFragment_to_mapsFragment"
             app:destination="@id/mapsFragment" />
+        <action
+            android:id="@+id/action_mainFragment_to_placeFragment"
+            app:destination="@id/placeFragment" />
+        <action
+            android:id="@+id/action_mainFragment_to_bluetoothReceiveDialog"
+            app:destination="@id/bluetoothReceiveDialog" />
     </fragment>
     <fragment
         android:id="@+id/mapsFragment"
@@ -27,6 +33,9 @@
         <action
             android:id="@+id/action_mapsFragment_to_choiceDialog"
             app:destination="@id/choiceDialog" />
+        <argument
+            android:name="fromMainFragment"
+            app:argType="boolean" />
     </fragment>
     <dialog
         android:id="@+id/choiceDialog"
@@ -40,4 +49,18 @@
             android:name="option2"
             app:argType="string" />
     </dialog>
+    <fragment
+        android:id="@+id/placeFragment"
+        android:name="com.github.matthews8.placeswishlist.placefragment.PlaceFragment"
+        android:label="PlaceFragment"
+        tools:layout="@layout/fragment_place" >
+        <argument
+            android:name="cityId"
+            app:argType="long" />
+    </fragment>
+    <dialog
+        android:id="@+id/bluetoothReceiveDialog"
+        android:name="com.github.matthews8.placeswishlist.mainfragment.BluetoothReceiveDialog"
+        android:label="BluetoothReceiveDialog"
+        tools:layout="@layout/bt_receive_dialog"/>
 </navigation>

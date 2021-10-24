@@ -5,7 +5,7 @@ import androidx.room.Relation
 import com.github.matthews8.placeswishlist.database.City
 import com.github.matthews8.placeswishlist.database.Place
 
-data class CitiesWithPlacesAndUsers(
+data class CityWithPlacesAndUsers(
     @Embedded val city: City,
     @Relation(
         entity = Place::class,

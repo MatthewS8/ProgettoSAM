@@ -30,13 +30,7 @@ data class Place(
     var address: String,
 
     @ColumnInfo
-    var visited: Boolean = false,
-
-    @ColumnInfo
     var type: Place.Type? = null,
-
-    @ColumnInfo(name = "icon")
-    var iconUrl: String? = null,
 
     @ColumnInfo (index = true)
     var cityId: Long,

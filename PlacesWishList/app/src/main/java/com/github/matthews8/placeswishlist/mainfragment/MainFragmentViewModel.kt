@@ -1,7 +1,12 @@
 package com.github.matthews8.placeswishlist.mainfragment
 
 import android.app.Application
+import android.bluetooth.BluetoothAdapter
+import android.content.Intent
 import android.util.Log
+import android.view.View
+import androidx.activity.result.ActivityResultCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.*
 import com.github.matthews8.placeswishlist.database.City
 import com.github.matthews8.placeswishlist.database.DatabaseDaoHelper
@@ -14,51 +19,26 @@ class MainFragmentViewModel(
     val database: FavPlacesDatabaseDao,
     application: Application): AndroidViewModel(application) {
 
-/*    var pisa: City = City(
-        cityId = 0,
-        lat = LatLng(	43.716667, 	10.400).latitude,
-        lng = LatLng(	43.716667, 	10.400).longitude,
-        name = "Pisa",
-        country = "Italy"
-    )
-    var firenze: City = City(
-        cityId = 1,
-        lat =  LatLng(43.769562, 	11.255814).latitude,
-        lng =  LatLng(43.769562, 	11.255814).longitude,
-        name = "Firenze",
-        country = "Italy"
-    )
-    var bologna: City = City(
-        cityId = 2,
-        lat =  LatLng(44.498955, 11.327591).latitude,
-        lng = LatLng(44.498955, 11.327591).longitude,
-        name = "Bologna",
-        country = "Italy"
-    )
-    var foggia: City = City(
-        cityId = 3,
-        lat =  LatLng(41.461761, 15.545021).latitude,
-        lng = LatLng(41.461761, 15.545021).longitude,
-        name = "Foggia",
-        country = "Italy"
-    ) */
-    var munich: City = City(
-        cityId = 4,
-        lat =  LatLng(48.137154, 11.576124).latitude,
-        lng = LatLng(48.137154, 11.576124).longitude,
-        name = "Munchen",
-        country = "Germany"
-    )
-
-    /*val pL = listOf(pisa, firenze, bologna, foggia, munich)*/
-
-
     var citiesList = database.getCities()
-//    init {
-//        viewModelScope.launch {
-//            DatabaseDaoHelper(database, application).insertPlaceAndCityWithOwner(munich)
-//        }
-//    }
+
+    private val _navigateToPlaceList = MutableLiveData<Long?>()
+    val navigateToPlaceList: LiveData<Long?>
+        get() = _navigateToPlaceList
+
+    fun onCityClicked(cityId: Long){
+        _navigateToPlaceList.value = cityId
+    }
+
+    fun onIconClicked(cityId: Long){
+        viewModelScope.launch {
+            DatabaseDaoHelper(database, getApplication<Application>().applicationContext)
+                .cityVisitedToggle(cityId)
+        }
+    }
+
+    fun onPlaceListNavigated(){
+        _navigateToPlaceList.value = null
+    }
 
     override fun onCleared() {
         super.onCleared()
@@ -79,9 +59,3 @@ class MainFragmentViewModelFactory(
     }
 
 }
-
-data class PippoTest(
-    val str: String,
-    val pippo: Long,
-    val pluto: LatLng = LatLng(0.0,0.0)
-)

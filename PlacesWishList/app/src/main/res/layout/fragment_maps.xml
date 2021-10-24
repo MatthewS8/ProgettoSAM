@@ -57,14 +57,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
+            android:enabled="@{mapsFragmentViewModel.addButtEnabled}"
+            android:onClick="@{() -> mapsFragmentViewModel.onAddClicked()}"
             android:text="@string/add_button"
             android:visibility="visible"
             app:layout_constraintBottom_toBottomOf="@+id/map"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.498"
-            app:layout_constraintStart_toStartOf="parent"
-            android:enabled="@{mapsFragmentViewModel.addButtEnabled}"/>
+            app:layout_constraintStart_toStartOf="parent" />
 
-        <!--    </LinearLayout>-->
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
