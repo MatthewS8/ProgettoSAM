@@ -49,7 +49,7 @@ class MapsFragmentViewModel(
             gPlace.Field.TYPES,
             gPlace.Field.ADDRESS_COMPONENTS)
 
-    private val daoHelper = DatabaseDaoHelper(database, application)
+    private val daoHelper = DatabaseDaoHelper(database)
     lateinit var lastMarker: Marker
     var markerList: MutableList<Marker> = mutableListOf() //eliminabile
     var citiesList = database.getCities()

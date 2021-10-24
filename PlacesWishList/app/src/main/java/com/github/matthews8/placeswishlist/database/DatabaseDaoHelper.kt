@@ -6,7 +6,7 @@ import com.github.matthews8.placeswishlist.database.relations.CityWithPlacesAndU
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class DatabaseDaoHelper(val dataInstance: FavPlacesDatabaseDao, context: Context){
+class DatabaseDaoHelper(val dataInstance: FavPlacesDatabaseDao){
 
     suspend fun insertPlaceAndCityWithOwner(city: City, place: Place? = null, owner: User = User()){
         var cityId = dataInstance.getCityId(cityName = city.name, country = city.country)

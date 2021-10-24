@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.room.*
 import com.github.matthews8.placeswishlist.database.relations.CityWithPlaces
 import com.github.matthews8.placeswishlist.database.relations.CityWithPlacesAndUsers
+import com.github.matthews8.placeswishlist.database.relations.PlaceWithUsers
 
 
 //TODO ho letto su stackoverflow che dovrei usare MutableLiveData per le query con Transaction
@@ -72,6 +73,19 @@ interface   FavPlacesDatabaseDao {
 
     @Query("DELETE FROM place_table WHERE placeId = :placeId ")
     suspend fun deletePlace(placeId: Long)
+
+    @Query("SELECT * FROM city_table ORDER BY name ASC")
+    fun getCitiesByNameAsc(): LiveData<List<City>>
+
+    @Query("SELECT * FROM city_table ORDER BY name DESC")
+    fun getCitiesByNameDesc(): LiveData<List<City>>
+
+    @Query("SELECT * FROM city_table ORDER BY cityId ASC")
+    fun getCitiesById(): LiveData<List<City>>
+
+    @Query("SELECT * FROM city_table ORDER BY cityId DESC")
+    fun getCitiesByIdDesc(): LiveData<List<City>>
+
 
 /* TODO
     Query Ordinamento e filtro

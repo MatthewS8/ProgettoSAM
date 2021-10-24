@@ -6,7 +6,33 @@
         android:id="@+id/action_bluetooth_receive"
         android:icon="@android:drawable/stat_sys_data_bluetooth"
         android:title="@string/bluetooth_Button"
-        app:showAsAction="always|withText" />
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/order_By"
+        android:title="@string/order_by" >
+
+        <menu>
+            <item
+                android:id="@+id/oB_alpha"
+                android:title="@string/alphabetical" />
+            <item
+                android:id="@+id/oB_timeAdded"
+                android:title="Last added" />
+        </menu>
+    </item>
+
+    <item
+        android:id="@+id/group_By"
+        android:title="@string/group_by" >
+
+        <menu>
+            <item
+                android:id="@+id/gB_alpha"
+                android:title="@string/gBcountry" />
+        </menu>
+    </item>
+
 
 
 </menu>

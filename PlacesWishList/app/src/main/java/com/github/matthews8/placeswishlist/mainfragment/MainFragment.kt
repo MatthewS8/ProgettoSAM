@@ -3,10 +3,7 @@ package com.github.matthews8.placeswishlist
 import android.Manifest
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -18,7 +15,6 @@ import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
-import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
@@ -29,11 +25,6 @@ import com.github.matthews8.placeswishlist.mainfragment.MainFragmentViewModel
 import com.github.matthews8.placeswishlist.mainfragment.MainFragmentViewModelFactory
 import com.github.matthews8.placeswishlist.mainfragment.CityListAdapter
 import com.github.matthews8.placeswishlist.mainfragment.CityListener
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlin.coroutines.coroutineContext
 
 class MainFragment : Fragment() {
 
@@ -116,12 +107,16 @@ class MainFragment : Fragment() {
                     }
                 true
             }
+            R.id.oB_alpha -> {
+                viewModel.orderByName()
+                true
+            }
+            R.id.oB_timeAdded -> {
+                viewModel.orderById()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    private fun startBtServer() {
-        Toast.makeText(requireContext(), "HELLO WORLD! ", Toast.LENGTH_LONG).show()
     }
 
     private fun checkPermissions(): Boolean{
@@ -204,9 +199,22 @@ class MainFragment : Fragment() {
             )
         )
 
+        viewModel.orderBy.observe(viewLifecycleOwner, {
+            it?.let {
+                viewModel.citiesList.observe(viewLifecycleOwner, {
+                    it?.let {
+                        adapter.submitList(it)
+                    }
+                })
+            }
+        })
+
         binding.citiesList.adapter = adapter
         viewModel.citiesList.observe(viewLifecycleOwner, Observer {
+            for(e in it)
+                Log.i(TAG, "onCreateView: pre submitList -- la lista è: $e")
             it?.let {
+                Log.i(TAG, "onCreateView: called submitList")
                 adapter.submitList(it)
             }
         })

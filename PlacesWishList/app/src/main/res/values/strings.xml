@@ -11,4 +11,8 @@
     <string name="bluetooth_Button">Receive from bluetooth</string>
     <string name="bluetooth_enable_fail">You need to enable bluetooth to continue</string>
     <string name="bluetooth_request_denied">You need to grant permissions to use this feature</string>
+    <string name="order_by">Order By...</string>
+    <string name="alphabetical">Alphabetical</string>
+    <string name="group_by">Group By...</string>
+    <string name="gBcountry">country</string>
 </resources>
