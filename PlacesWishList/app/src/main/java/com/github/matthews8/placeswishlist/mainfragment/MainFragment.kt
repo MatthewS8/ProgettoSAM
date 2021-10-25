@@ -11,20 +11,21 @@ import android.util.Log
 import android.view.*
 import androidx.fragment.app.Fragment
 import android.widget.Toast
+import androidx.appcompat.view.ActionMode
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.selection.*
+import androidx.recyclerview.widget.RecyclerView
 import com.github.matthews8.placeswishlist.database.FavPlacesDatabase
 import com.github.matthews8.placeswishlist.databinding.FragmentMainBinding
-import com.github.matthews8.placeswishlist.mainfragment.MainFragmentViewModel
-import com.github.matthews8.placeswishlist.mainfragment.MainFragmentViewModelFactory
-import com.github.matthews8.placeswishlist.mainfragment.CityListAdapter
-import com.github.matthews8.placeswishlist.mainfragment.CityListener
+import com.github.matthews8.placeswishlist.mainfragment.*
 
 class MainFragment : Fragment() {
 
@@ -62,10 +63,16 @@ class MainFragment : Fragment() {
     val TAG = "OptionsMenuDebug"
 
 
+    private var actionMode: ActionMode? = null
+    private lateinit var selectionTracker: SelectionTracker<Long>
+    private lateinit var selectionObserver: CitySelectionObserver
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
     }
+
+
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.main_fragment_menu, menu)
@@ -88,23 +95,23 @@ class MainFragment : Fragment() {
             R.id.action_bluetooth_receive -> {
                 mBluetoothAction = 0
                 if(checkPermissions()) {
-                        Log.i(
-                            TAG,
-                            "onOptionsItemSelected: permissionGranted: true calling discoverable"
-                        )
-                        requestDiscoverable()
-                    } else {
-                        Log.i(
-                            TAG,
-                            "onOptionsItemSelected: permissionGranted: false making a toast"
-                        )
-                        Toast.makeText(
-                            context,
-                            getString(R.string.bluetooth_request_denied),
-                            Toast.LENGTH_LONG
-                        )
-                            .show()
-                    }
+                    Log.i(
+                        TAG,
+                        "onOptionsItemSelected: permissionGranted: true calling discoverable"
+                    )
+                    requestDiscoverable()
+                } else {
+                    Log.i(
+                        TAG,
+                        "onOptionsItemSelected: permissionGranted: false making a toast"
+                    )
+                    Toast.makeText(
+                        context,
+                        getString(R.string.bluetooth_request_denied),
+                        Toast.LENGTH_LONG
+                    )
+                        .show()
+                }
                 true
             }
             R.id.oB_alpha -> {
@@ -193,10 +200,10 @@ class MainFragment : Fragment() {
 
         val adapter = CityListAdapter(CityListener(
             cityClickListener = { cityId ->
-            viewModel.onCityClicked(cityId) },
+                viewModel.onCityClicked(cityId) },
             iconClickListener =   { cityId ->
                 viewModel.onIconClicked(cityId) }
-            )
+        )
         )
 
         viewModel.orderBy.observe(viewLifecycleOwner, {
@@ -210,6 +217,24 @@ class MainFragment : Fragment() {
         })
 
         binding.citiesList.adapter = adapter
+        var rv = binding.citiesList
+        selectionTracker = SelectionTracker.Builder<Long>(
+            MainFragment::class.java.name,
+            rv,
+            CityItemKeyProvider(rv),
+            CityDetailsLookup(rv),
+            StorageStrategy.createLongStorage()
+        ).withSelectionPredicate(
+            SelectionPredicates.createSelectAnything()
+        ).build()
+
+        adapter.tracker = selectionTracker
+
+        selectionObserver = CitySelectionObserver(selectionTracker) { count ->
+            onSelectionChanged(count)
+        }
+        selectionTracker.addObserver(selectionObserver)
+
         viewModel.citiesList.observe(viewLifecycleOwner, Observer {
             for(e in it)
                 Log.i(TAG, "onCreateView: pre submitList -- la lista è: $e")
@@ -284,6 +309,75 @@ class MainFragment : Fragment() {
         }
     )
 
+    fun onSelectionChanged(selectedCount: Int){
+        if(selectedCount == 0){
+            actionMode?.let{
+                it.finish()
+                actionMode = null
+            }
+        } else{
+            (requireActivity() as? AppCompatActivity)?.let { activity ->
+                if(actionMode == null){
+                    actionMode = activity.startSupportActionMode(CityActionModeCallback())
+                }
+            }
+            actionMode?.title = "Selected ${selectedCount}"
+        }
+    }
+    private class CitySelectionObserver(
+        private val selectionTracker: SelectionTracker<Long>,
+        private val onSelectionChangedListener: (Int) -> Unit
+    ) : SelectionTracker.SelectionObserver<Long>() {
+
+        override fun onSelectionChanged() {
+            super.onSelectionChanged()
+            onSelectionChangedListener(selectionTracker.selection?.size() ?: 0)
+        }
+    }
+    
+    private inner class CityActionModeCallback: ActionMode.Callback {
+        override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+            Log.i(TAG, "onCreateActionMode: infalting menu")
+            val menuInflater = requireActivity().menuInflater
+            menuInflater.inflate(R.menu.main_action_mode_menu, menu)
+            return true
+            
+        }
+
+        override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+            Log.i(TAG, "onPrepareActionMode: return false")
+            return false
+        }
+
+        override fun onActionItemClicked(mode: ActionMode, item: MenuItem) =
+            when(item.itemId) {
+                R.id.action_remove -> {
+                    val itemsToRemove = selectionTracker.selection.toList().also {
+                        selectionTracker.clearSelection()
+                    }
+                    viewModel.deleteSelectedCities(itemsToRemove)
+                    true
+                }
+                else -> false
+            }
+
+        override fun onDestroyActionMode(mode: ActionMode?) {
+            Log.i(TAG, "onDestroyActionMode: destroy action mode")
+            selectionTracker.clearSelection()
+        }
+    }
+
+    private class CityItemKeyProvider(private val rv: RecyclerView):
+        ItemKeyProvider<Long>(SCOPE_MAPPED){
+        override fun getKey(position: Int): Long? {
+            return rv.adapter?.getItemId(position)
+        }
+
+        override fun getPosition(key: Long): Int {
+            val viewHolder = rv.findViewHolderForItemId(key)
+            return viewHolder?.layoutPosition ?: RecyclerView.NO_POSITION
+        }
+    }
 
 
 }

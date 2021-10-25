@@ -87,6 +87,10 @@ class MainFragmentViewModel(
         super.onCleared()
         Log.i(TAG,"OnCleared called")
     }
+
+    fun deleteSelectedCities(toRemove: List<Long>) {
+
+    }
 }
 
 class MainFragmentViewModelFactory(

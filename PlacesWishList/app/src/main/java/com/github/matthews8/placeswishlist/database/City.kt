@@ -28,7 +28,6 @@ data class City(
     @ColumnInfo
     var visited: Boolean = false,
 
-
    /* @Ignore
     var imgeUrl: String? = null,*/
 
