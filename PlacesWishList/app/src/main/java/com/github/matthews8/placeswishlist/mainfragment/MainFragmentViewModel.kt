@@ -89,7 +89,16 @@ class MainFragmentViewModel(
     }
 
     fun deleteSelectedCities(toRemove: List<Long>) {
-
+        Log.i(TAG, "deleteSelectedCities: received this list")
+        for( i in toRemove){
+            Log.i(TAG, "LIST: $i")
+        }
+        viewModelScope.launch {
+            deleteFromDB(toRemove)
+        }
+    }
+    private suspend fun deleteFromDB(cities: List<Long>){
+        database.deleteCities(cities)
     }
 }
 

@@ -32,20 +32,19 @@ class CityListAdapter(val cityClickListener: CityListener): ListAdapter<City, Ci
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         getItem(position).let {
-            val isSelected = tracker?.isSelected(position.toLong()) ?: false
+            val isSelected = tracker?.isSelected(it.cityId) ?: false
             holder.bind(it, cityClickListener, isSelected)
 
         }
     }
 
-    override fun getItemId(position: Int): Long = position.toLong()
+    override fun getItemId(position: Int): Long = getItem(position).cityId
 
     class ViewHolder private constructor(val binding: ListItemCityBinding): RecyclerView.ViewHolder(binding.root){
 
         val TAG = "VIEWHOLDER"
         fun bind(item: City, clickListeners: CityListener, isSelected: Boolean) {
             if(isSelected) {
-                Log.i(TAG, "bind: isSelcted: $isSelected for ${item.name} ")
                 binding.visited.visibility = View.GONE
             } else {
                 binding.visited.visibility = View.VISIBLE

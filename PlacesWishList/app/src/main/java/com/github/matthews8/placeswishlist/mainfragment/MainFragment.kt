@@ -64,14 +64,13 @@ class MainFragment : Fragment() {
 
 
     private var actionMode: ActionMode? = null
-    private lateinit var selectionTracker: SelectionTracker<Long>
+    private lateinit var selectionTracker: SelectionTracker<Long> //todo qui si perdono i dati
     private lateinit var selectionObserver: CitySelectionObserver
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
     }
-
 
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {

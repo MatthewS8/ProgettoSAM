@@ -71,6 +71,9 @@ interface   FavPlacesDatabaseDao {
     @Query("DELETE FROM city_table WHERE cityId = :cityId ")
     suspend fun deleteCity(cityId: Long)
 
+    @Query("DELETE FROM city_table WHERE cityId IN (:cityIds)")
+    suspend fun deleteCities(cityIds: List<Long>)
+
     @Query("DELETE FROM place_table WHERE placeId = :placeId ")
     suspend fun deletePlace(placeId: Long)
 
