@@ -3,7 +3,10 @@ package com.github.matthews8.placeswishlist
 import android.Manifest
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -19,6 +22,7 @@ import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.selection.*
@@ -137,6 +141,7 @@ class MainFragment : Fragment() {
             )
         } else {
             permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
+            //todo attivare anche il gps su android 10 in poi
         }
         for(permission in permissions) {
             if(ContextCompat.checkSelfPermission(
@@ -164,7 +169,7 @@ class MainFragment : Fragment() {
                 requestDiscoverable()
             } else {
                 //voglio inviare
-                TODO("Not yet implemented")
+                requestEnable()
             }
         }
         Log.i(TAG, "returning from callback  ")
@@ -265,7 +270,7 @@ class MainFragment : Fragment() {
         updateBluetoothItem()
     }
 
-    private fun enableBt(){
+    private fun requestEnable(){
         //TODO ---- se devo attivare la discoverability questo passaggio non serve
         // ie posso usare questa funzione per avviare la ricerca dei dispostivi
         //  mentre per ricevere chiamo direttamente requestDiscoverable()
@@ -280,13 +285,17 @@ class MainFragment : Fragment() {
             if(it.resultCode != Activity.RESULT_OK){
                 Toast.makeText(requireContext(), getString(R.string.bluetooth_enable_fail), Toast.LENGTH_LONG).show()
             }
+            else{
+                Toast.makeText(requireContext(), "ATTIVOOOO ", Toast.LENGTH_LONG).show()
+                findNavController().navigate(MainFragmentDirections.actionMainFragmentToBluetoothSendDialog())
+            }
         }
     )
 
     private fun requestDiscoverable() {
         Log.i(TAG, "requestDiscoverable: called now")
         val intent = Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE)
-        intent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300) //5 min
+        intent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 10) //5 min
         discoverableCallback.launch(intent)
         //TODO devo registrare un broadcast receiver per sapere quando il dispositivo non è piu discoverable
         //val discoverabilityIntent = IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED)
@@ -302,9 +311,7 @@ class MainFragment : Fragment() {
 
             if(it.resultCode != Activity.RESULT_CANCELED){
                 findNavController().navigate(MainFragmentDirections.actionMainFragmentToBluetoothReceiveDialog())
-                //startBtServer()
             }
-            Toast.makeText(requireContext(), "SIAMO NELL discoverable result is ${it.resultCode}", Toast.LENGTH_SHORT).show()
         }
     )
 
@@ -355,6 +362,15 @@ class MainFragment : Fragment() {
                         selectionTracker.clearSelection()
                     }
                     viewModel.deleteSelectedCities(itemsToRemove)
+                    true
+                }
+                R.id.action_send -> {
+                    val itemsToSend = selectionTracker.selection.toList().also {
+                        selectionTracker.clearSelection()
+                    }
+                    if(checkPermissions()) {
+                        requestEnable()
+                    }
                     true
                 }
                 else -> false

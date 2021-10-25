@@ -19,6 +19,9 @@
         <action
             android:id="@+id/action_mainFragment_to_bluetoothReceiveDialog"
             app:destination="@id/bluetoothReceiveDialog" />
+        <action
+            android:id="@+id/action_mainFragment_to_bluetoothSendDialog"
+            app:destination="@id/bluetoothSendDialog" />
     </fragment>
     <fragment
         android:id="@+id/mapsFragment"
@@ -63,4 +66,9 @@
         android:name="com.github.matthews8.placeswishlist.mainfragment.BluetoothReceiveDialog"
         android:label="BluetoothReceiveDialog"
         tools:layout="@layout/bt_receive_dialog"/>
+    <dialog
+        android:id="@+id/bluetoothSendDialog"
+        android:name="com.github.matthews8.placeswishlist.mainfragment.BluetoothSendDialog"
+        android:label="BluetoothSendDialog"
+        tools:layout="@layout/bt_send_dialog"/>
 </navigation>

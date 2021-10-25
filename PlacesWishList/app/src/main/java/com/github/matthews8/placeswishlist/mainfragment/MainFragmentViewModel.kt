@@ -24,6 +24,7 @@ class MainFragmentViewModel(
     //TODO BUG strano comportamento se ordino la lista mi fa solo un ordinamento parziale
     //  credo che il problema sia nella sequenza eventi tra ricezione della lista e registrazione del observer
     fun orderByName(){
+        //TODO verificare SE VIENE SETTATO OGNI VOLta
         orderBy.value = when(orderBy.value) {
             0 -> 1
             else -> 0
