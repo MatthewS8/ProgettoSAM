@@ -22,6 +22,7 @@ import androidx.navigation.fragment.findNavController
 import com.github.matthews8.placeswishlist.MainActivity
 import com.github.matthews8.placeswishlist.MainFragmentDirections
 import com.github.matthews8.placeswishlist.R
+import kotlinx.coroutines.*
 import java.io.IOException
 import java.nio.ByteBuffer
 
@@ -34,6 +35,8 @@ class BluetoothSendDialog: DialogFragment(), AdapterView.OnItemClickListener{
     val btDevices = ArrayList<BluetoothDevice>()
     private lateinit var deviceListAdapter: DeviceListAdapter
     private lateinit var listView: ListView
+    private lateinit var connectThread: ConnectThread
+    private lateinit var connectedThread: ConnectedThread
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -134,10 +137,40 @@ class BluetoothSendDialog: DialogFragment(), AdapterView.OnItemClickListener{
 
 
 
-//    @SuppressLint("MissingPermission")
-//    private inner class AcceptThread : Thread() {
-//
-//
+    @SuppressLint("MissingPermission")
+    private inner class ConnectThread(val device: BluetoothDevice) : Thread() {
+
+
+        var bt_socket: BluetoothSocket? = null
+        override fun run() {
+            bt_socket =
+                device.createRfcommSocketToServiceRecord(java.util.UUID.fromString(UUID))
+            try {
+                bt_socket?.let{
+                    it.connect()
+                    connectedThread = ConnectedThread(it)
+                    runBlocking {
+                        runThread(connectedThread)
+                    }
+                }
+            }catch(e: IOException){
+                cancel()
+                Log.e(TAG, "connect: $e ")
+            }
+        }
+
+        fun cancel(){
+            try {
+                bt_socket?.close()
+            } catch (e: IOException) {
+                Toast.makeText(requireContext(),
+                    "Something went wrong during connection", Toast.LENGTH_LONG)
+                    .show()
+                Log.e(TAG, "cancel: $e ")
+            }
+
+        }
+    }
 //        private val serverSocket: BluetoothServerSocket? by lazy(LazyThreadSafetyMode.NONE) {
 //            btAdapter?.listenUsingInsecureRfcommWithServiceRecord(
 //                getString(R.string.app_name),
@@ -175,39 +208,44 @@ class BluetoothSendDialog: DialogFragment(), AdapterView.OnItemClickListener{
 //    }
 
 
-//    private inner class ConnectedThread(private val socket: BluetoothSocket): Thread(){
-//        val inputStream = socket.inputStream
-//        //TODO DA FINIRE
-//
-//        override fun run() {
-//            TODO("Da finire")
-//            //lettura dimensione da ricevere
-//            var byteSizeBf = ByteArray(4)
-//            inputStream.read(byteSizeBf, 0, 4)
-//            val byteSize = ByteBuffer.wrap(byteSizeBf).int
-//
-//            var byteRead = 0
-//            var read: Int
-//            val inputBuffer = ByteArray(1024)
-//            while(true){
-//                read = try {
-//                    inputStream.read(inputBuffer)
-//                } catch(e: IOException){
-//                    Log.d(TAG, "run: input stream disconnected")
-//                    break
-//                }
-//                if(read != -1){
-//                    byteRead += read
-//
-//                } else{
-//                    break
-//                }
-//            }
-//
-//
-//
-//        }
-//    }
+    private inner class ConnectedThread(private val socket: BluetoothSocket): Thread(){
+        val oStream = socket.outputStream
+        //TODO DA FINIRE
+        //val viewModel.listToSend
+
+        val listToSend: String = "Lorem ipsum ipsum solem"
+
+        override fun run() {
+            //lettura dimensione da ricevere
+            var list = listToSend.toByteArray()
+            val dim = list.size
+
+            try {
+                oStream.write(dim)
+            } catch(e: IOException){
+                Log.d(TAG, "run: stream disconnected")
+                cancel()
+            }
+            try {
+                oStream.write(list)
+            } catch(e: IOException){
+                Log.d(TAG, "run: stream disconnected")
+                cancel()
+            }
+            runBlocking(Dispatchers.Main)
+            {Toast.makeText(requireContext(), "INVIO EFFETTUATO", Toast.LENGTH_LONG).show()}
+            dismiss()
+        }
+
+        fun cancel(){
+            try{
+                socket.close()
+            }catch(e: IOException) {
+                Log.d(TAG, "run: stream disconnected")
+            }
+        }
+
+    }
 
 
     class DeviceListAdapter(
@@ -240,9 +278,20 @@ class BluetoothSendDialog: DialogFragment(), AdapterView.OnItemClickListener{
     @SuppressLint("MissingPermission")
     override fun onItemClick(av: AdapterView<*>?, view: View?, i: Int, l: Long) {
         btAdapter.cancelDiscovery()
-        val deviceName = btDevices.get(i).name
-        val deviceAddress = btDevices.get(i).address
-        Log.i(TAG, "onItemClick: $deviceName")
+        val deviceAddress = btDevices.get(i)
+        connectThread = ConnectThread(deviceAddress)
 
+        runBlocking {
+            launch {
+                runThread(connectThread)
+            }
+        }
+
+    }
+
+    private suspend fun runThread(t: Thread){
+        withContext(Dispatchers.IO){
+            t.start()
+        }
     }
 }

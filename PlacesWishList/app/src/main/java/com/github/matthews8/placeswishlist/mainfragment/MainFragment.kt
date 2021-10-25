@@ -295,7 +295,7 @@ class MainFragment : Fragment() {
     private fun requestDiscoverable() {
         Log.i(TAG, "requestDiscoverable: called now")
         val intent = Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE)
-        intent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 10) //5 min
+        intent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300) //5 min
         discoverableCallback.launch(intent)
         //TODO devo registrare un broadcast receiver per sapere quando il dispositivo non è piu discoverable
         //val discoverabilityIntent = IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED)

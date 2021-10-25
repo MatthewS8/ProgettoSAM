@@ -57,11 +57,11 @@ class BluetoothReceiveDialog: DialogFragment(){
             val intentFilter2 = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
             requireActivity().registerReceiver(enableReceiver, intentFilter2)
 
-//            val acceptThread = AcceptThread()
-//            GlobalScope.launch(Dispatchers.IO) {
-//                Log.i(TAG, "onCreateView: start server")
-//                acceptThread.run()
-//            }
+            val acceptThread = AcceptThread()
+            GlobalScope.launch(Dispatchers.IO) {
+                Log.i(TAG, "onCreateView: start server")
+                acceptThread.run()
+            }
 
         }
         return view
@@ -204,13 +204,13 @@ class BluetoothReceiveDialog: DialogFragment(){
         val inputStream = socket.inputStream
         //TODO DA FINIRE
 
+        val TAG = "RECEIVED"
         override fun run() {
-            TODO("Da finire")
             //lettura dimensione da ricevere
             var byteSizeBf = ByteArray(4)
             inputStream.read(byteSizeBf, 0, 4)
             val byteSize = ByteBuffer.wrap(byteSizeBf).int
-
+            Log.i(TAG, "dim: $byteSize")
             var byteRead = 0
             var read: Int
             val inputBuffer = ByteArray(1024)
@@ -227,10 +227,16 @@ class BluetoothReceiveDialog: DialogFragment(){
                 } else{
                     break
                 }
+                var str = String(inputBuffer)
+                Log.i(TAG, "ive read: ${str}")
             }
 
+        }
+    }
 
-
+    private suspend fun runThread(t: Thread){
+        withContext(Dispatchers.IO){
+            t.start()
         }
     }
 
