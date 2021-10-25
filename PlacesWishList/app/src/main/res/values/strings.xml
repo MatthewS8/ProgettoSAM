@@ -15,4 +15,6 @@
     <string name="alphabetical">Alphabetical</string>
     <string name="group_by">Group By...</string>
     <string name="gBcountry">country</string>
+    <string name="delete">Delete</string>
+    <string name="send_via_bluetooth">Send via Bluetooth</string>
 </resources>
