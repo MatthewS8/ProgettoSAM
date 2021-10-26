@@ -22,7 +22,6 @@ import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.selection.*
@@ -30,6 +29,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.github.matthews8.placeswishlist.database.FavPlacesDatabase
 import com.github.matthews8.placeswishlist.databinding.FragmentMainBinding
 import com.github.matthews8.placeswishlist.mainfragment.*
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class MainFragment : Fragment() {
 
@@ -70,6 +70,7 @@ class MainFragment : Fragment() {
     private var actionMode: ActionMode? = null
     private lateinit var selectionTracker: SelectionTracker<Long> //todo qui si perdono i dati
     private lateinit var selectionObserver: CitySelectionObserver
+    private lateinit var fab: FloatingActionButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -190,14 +191,10 @@ class MainFragment : Fragment() {
         binding.mainFragmentViewModel = viewModel
 
 
+        fab = binding.addButton
         binding.addButton.setOnClickListener {
             it.findNavController().navigate(MainFragmentDirections.actionMainFragmentToMapsFragment(true))
-            Toast.makeText(
-                this.context,
-                "Button clicked",
-                Toast.LENGTH_SHORT
-            )
-                .show()
+            MainFragmentViewModelFactory.setInstanceToNull()
         }
 
         binding.setLifecycleOwner(this)
@@ -252,6 +249,7 @@ class MainFragment : Fragment() {
             it?.let{ cityId ->
                 this.findNavController().navigate(MainFragmentDirections.actionMainFragmentToPlaceFragment(cityId))
                 viewModel.onPlaceListNavigated()
+                MainFragmentViewModelFactory.setInstanceToNull()
             }
         })
 
@@ -352,7 +350,8 @@ class MainFragment : Fragment() {
 
         override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
             Log.i(TAG, "onPrepareActionMode: return false")
-            return false
+            fab.hide()
+            return true
         }
 
         override fun onActionItemClicked(mode: ActionMode, item: MenuItem) =
@@ -368,6 +367,9 @@ class MainFragment : Fragment() {
                     val itemsToSend = selectionTracker.selection.toList().also {
                         selectionTracker.clearSelection()
                     }
+                    Log.i(TAG, "send:  called viewModel")
+                    viewModel.selectedList = itemsToSend
+
                     if(checkPermissions()) {
                         requestEnable()
                     }
@@ -378,6 +380,7 @@ class MainFragment : Fragment() {
 
         override fun onDestroyActionMode(mode: ActionMode?) {
             Log.i(TAG, "onDestroyActionMode: destroy action mode")
+            fab.show()
             selectionTracker.clearSelection()
         }
     }

@@ -15,7 +15,7 @@
         android:background="@color/design_default_color_background" >
 
         <TextView
-            android:id="@+id/title"
+            android:id="@+id/titleTv"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
@@ -27,7 +27,7 @@
             android:textColor="#000000"
             android:textSize="24sp"
             android:textStyle="bold"
-            tools:text="Waiting for connection" />
+            tools:text="Pick a color" />
 
     <View
         android:id="@+id/divider"
@@ -43,18 +43,9 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
             android:layout_marginEnd="16dp"
+            android:textSize="18sp"
             tools:text="Receiving from ..."
             android:visibility="gone" />
-        <ProgressBar
-            android:id="@+id/progressBar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp"
-            android:visibility="gone"/>
-
 
         <ProgressBar
             android:id="@+id/waitingBar"
@@ -65,7 +56,7 @@
             android:layout_marginTop="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginBottom="16dp"
-            android:visibility="visible"/>
+            android:visibility="gone"/>
 
         <EditText
             android:id="@+id/nameET"
@@ -78,6 +69,13 @@
             android:hint="Enter a name..."
             android:inputType="text"
             android:visibility="gone" />
+        <Button
+            android:id="@+id/edit_confirm_bt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:visibility="gone"/>
+
 
 
     </LinearLayout>

@@ -10,47 +10,68 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.DialogFragment
-import androidx.navigation.fragment.findNavController
-import com.github.matthews8.placeswishlist.MainActivity
-import com.github.matthews8.placeswishlist.MainFragmentDirections
+import androidx.lifecycle.ViewModelProvider
 import com.github.matthews8.placeswishlist.R
+import com.github.matthews8.placeswishlist.database.FavPlacesDatabase
+import com.github.matthews8.placeswishlist.database.relations.CityWithPlaces
+import com.google.gson.Gson
 import kotlinx.coroutines.*
 import java.io.IOException
-import java.nio.ByteBuffer
-
+import java.io.OutputStream
+import java.lang.Integer.min
+import kotlin.math.max
 
 class BluetoothSendDialog: DialogFragment(), AdapterView.OnItemClickListener{
     val TAG = "BLUETOOTH_DIALOG_S"
     val btAdapter = BluetoothAdapter.getDefaultAdapter()
     val UUID = "df34b4da-2254-4983-8250-4e97453b4aa8"
 
+    private lateinit var viewModel: MainFragmentViewModel
+
     val btDevices = ArrayList<BluetoothDevice>()
     private lateinit var deviceListAdapter: DeviceListAdapter
     private lateinit var listView: ListView
-    private lateinit var connectThread: ConnectThread
-    private lateinit var connectedThread: ConnectedThread
+    private lateinit var button: Button
+    private lateinit var progressBar: ProgressBar
+    private lateinit var title: TextView
 
+
+    private lateinit var clientThread: ClientThread
+
+    @SuppressLint("MissingPermission")
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.bt_send_dialog, container, false)
+        val application = requireNotNull(this.activity).application
+        val dataSource = FavPlacesDatabase.getInstance(application).favPlacesDatabaseDao
+        val viewModelFactory = MainFragmentViewModelFactory(dataSource, application)
+        viewModel = ViewModelProvider(this, viewModelFactory)
+            .get(MainFragmentViewModel::class.java)
+
+        button = view.findViewById(R.id.bt_discover_button)
+        title = view.findViewById(R.id.titleTvSend)
+        progressBar = view.findViewById(R.id.progressBar)
 
         listView = view.findViewById<ListView>(R.id.list_view)
         listView.setOnItemClickListener(this)
-        val btDiscoverButton: Button = view.findViewById(R.id.bt_discover_button)
+
 
         actionDiscover()
-        btDiscoverButton.setOnClickListener{
+        if(btAdapter.isDiscovering){
+            button.setText("Restart")
+        }
+        button.setOnClickListener{
             actionDiscover()
         }
 
@@ -60,10 +81,57 @@ class BluetoothSendDialog: DialogFragment(), AdapterView.OnItemClickListener{
         return view
     }
 
+
+    private fun onDeviceSelected(){
+        listView.visibility = View.GONE
+        title.text = getString(R.string.connecting)
+        progressBar.visibility = View.VISIBLE
+        button.isEnabled = false
+
+    }
+
+    private fun onSelectionPrepare() {
+        button.visibility = View.GONE
+        listView.visibility = View.GONE
+        progressBar.visibility = View.VISIBLE
+        title.text = getString(R.string.title_send_wait)
+    }
+
+    private fun onSelectionReady() {
+        button.visibility = View.GONE
+        listView.visibility = View.GONE
+        progressBar.visibility = View.VISIBLE
+        title.text = getString(R.string.sending_list)
+    }
+
+    private fun onErrorState(msg: String) {
+        title.apply {
+            text = "Error $msg"
+            setTextColor(Color.RED)
+            visibility = View.VISIBLE
+        }
+        button.apply {
+            text = "Close"
+            setOnClickListener{
+                dismiss()
+            }
+            visibility = View.VISIBLE
+        }
+        listView.visibility = View.GONE
+        progressBar.visibility = View.GONE
+    }
+
     override fun onDestroy() {
 
-
+        Log.i(TAG, "onDestroy: dialog")
+        if(viewModel.dbCoroutine?.isActive ?: false){
+            Log.i(TAG, "onDestroy: isActive")
+            viewModel.dbCoroutine?.cancel()
+            Log.i(TAG, "onDestroy: cancelled")
+        }
+        viewModel.selectionToSend = null
         requireActivity().unregisterReceiver(enableReceiver)
+        requireActivity().unregisterReceiver(btDiscover)
         super.onDestroy()
     }
 
@@ -124,6 +192,7 @@ class BluetoothSendDialog: DialogFragment(), AdapterView.OnItemClickListener{
 
                     BluetoothAdapter.STATE_OFF -> {
                         Log.i(TAG, "state: BLUETOOTH STATE OFF")
+                        onErrorState("Bluetooth OFF")
                     }
 
                     else -> {
@@ -136,110 +205,155 @@ class BluetoothSendDialog: DialogFragment(), AdapterView.OnItemClickListener{
     }
 
 
-
     @SuppressLint("MissingPermission")
-    private inner class ConnectThread(val device: BluetoothDevice) : Thread() {
+    private inner class ClientThread(val device: BluetoothDevice): Thread(){
 
+        var btSocket: BluetoothSocket? = null
 
-        var bt_socket: BluetoothSocket? = null
-        override fun run() {
-            bt_socket =
-                device.createRfcommSocketToServiceRecord(java.util.UUID.fromString(UUID))
+        override fun run(){
+            super.run()
+            connect()
+            sendList()
+        }
+
+        fun connect() {
+            btAdapter.cancelDiscovery()
+            btSocket = device.createRfcommSocketToServiceRecord(
+                java.util.UUID.fromString(UUID)
+            )
             try {
-                bt_socket?.let{
+                btSocket?.let{
+                    Log.i(TAG, "try connect ")
                     it.connect()
-                    connectedThread = ConnectedThread(it)
-                    runBlocking {
-                        runThread(connectedThread)
-                    }
+                    Log.i(TAG, "connected")
                 }
             }catch(e: IOException){
-                cancel()
+                try {
+                    btSocket?.close()
+                }catch(e: IOException){
+
+                }
                 Log.e(TAG, "connect: $e ")
             }
         }
 
-        fun cancel(){
-            try {
-                bt_socket?.close()
-            } catch (e: IOException) {
-                Toast.makeText(requireContext(),
-                    "Something went wrong during connection", Toast.LENGTH_LONG)
-                    .show()
-                Log.e(TAG, "cancel: $e ")
+        fun sendList() {
+            val oStream: OutputStream? = btSocket?.outputStream
+            runBlocking(Dispatchers.Main) {
+                onSelectionPrepare()
+            }
+            var selectedPlacesToSend: List<CityWithPlaces>? = null
+            selectedPlacesToSend = viewModel.database.getCitiesWithPlaces(viewModel.selectedList!!)
+            val gson = Gson()
+            val jsonStr = gson.toJson(selectedPlacesToSend)
+            Log.i(TAG, "JSON: $jsonStr")
+            viewModel.selectionToSend = jsonStr.toByteArray()
+
+            runBlocking(Dispatchers.Main) {
+                onSelectionReady()
             }
 
-        }
-    }
-//        private val serverSocket: BluetoothServerSocket? by lazy(LazyThreadSafetyMode.NONE) {
-//            btAdapter?.listenUsingInsecureRfcommWithServiceRecord(
-//                getString(R.string.app_name),
-//                java.util.UUID.fromString(UUID)
-//            )
-//        }
-//
-//        override fun run() {
-//            // Keep listening until exception occurs or a socket is returned.
-//            var shouldLoop = true
-//            while (shouldLoop) {
-//                val socket: BluetoothSocket? = try {
-//                    serverSocket?.accept()
-//                } catch (e: IOException) {
-//                    Log.e(TAG, "Socket's accept() method failed", e)
-//                    shouldLoop = false
-//                    null
-//                }
-//                socket?.also {
-//                    ConnectedThread(it).run()
-//                    serverSocket?.close()
-//                    shouldLoop = false
-//                }
-//            }
-//        }
-//
-//        // Closes the connect socket and causes the thread to finish.
-//        fun cancel() {
-//            try {
-//                serverSocket?.close()
-//            } catch (e: IOException) {
-//                Log.e(TAG, "Could not close the connect socket", e)
-//            }
-//        }
-//    }
+            /*if(viewModel.selectionToSend == null){
+                Log.e(TAG, "sendList: selection is null", )
+                runBlocking(Dispatchers.Main) {
+                    onSelectionPrepare()
+                }
+                Log.i(TAG, "sendList: before join")
+                runBlocking {viewModel.dbCoroutine!!.join()}
+                Log.i(TAG, "sendList: after join")
+            }
+            Log.i(TAG, "CONNECTEdThread: cancelDiscovery ")
+*/
+            if(btAdapter.isDiscovering)
+                btAdapter.cancelDiscovery()
 
+           /* if(viewModel.dbCoroutine == null)
+                Log.i(TAG, "sendList: DB COURUTINE IS NULL")
 
-    private inner class ConnectedThread(private val socket: BluetoothSocket): Thread(){
-        val oStream = socket.outputStream
-        //TODO DA FINIRE
-        //val viewModel.listToSend
+            if(viewModel.dbCoroutine?.isActive == true) {
+                Log.i(TAG, "sendList: VIewModel is active")
+                runBlocking(Dispatchers.Main) {
+                    onSelectionPrepare()
+                }
+                Log.i(TAG, "sendList: before join")
+                runBlocking {viewModel.dbCoroutine!!.join()}
+                Log.i(TAG, "sendList: after join")
+                Log.i( TAG,
+                    "sendList: viewModel Coroutine is completed ${viewModel.dbCoroutine?.isCompleted}"
+                )
+            } else {
+                Log.i(TAG, "sendList: IN the else before if ${viewModel.dbCoroutine?.isCompleted == false}")
 
-        val listToSend: String = "Lorem ipsum ipsum solem"
+                if(viewModel.dbCoroutine?.isCompleted == false) {
+                    Log.i(TAG, "sendList: isNOTcompleted")
+                    cancel()
+                    runBlocking(Dispatchers.Main) {
+                        onErrorState("Failed to load the list")
+                    }
+                }
+                val gson = Gson()
+                val str = viewModel.selectionToSend?.let {String(it)}
+                Log.i(TAG, "SEND IS: $str ")
 
-        override fun run() {
-            //lettura dimensione da ricevere
-            var list = listToSend.toByteArray()
-            val dim = list.size
+                val listReceived = gson.fromJson(str, Array<CityWithPlaces>::class.java)
+                listReceived?.let {
+                    Log.i(TAG, "listReceived is: ${it.size}")
+                }
+//                Log.i(TAG, "SEND IS:  ${listReceived[0]}")
+            }
 
+            Log.i(TAG, "CONNECTEdThread: viewModel.selectionToSend is ready")
+            runBlocking(Dispatchers.Main) {
+                onSelectionReady()
+            }*/
+
+//            Log.i(TAG, "CONNECTEdThread: dim initializing ")
+
+//            val dim = viewModel.selectionToSend!!.size
+
+/*            var dimens = "$dim|".toByteArray()
+            Log.i(TAG, "CONNECTEdThread: dim is $dim")
             try {
-                oStream.write(dim)
-            } catch(e: IOException){
+//                oStream?.write(dim.toString().toByteArray(), 0, 4)
+                oStream?.write(dimens)
+            } catch(e: IOException) {
                 Log.d(TAG, "run: stream disconnected")
                 cancel()
             }
-            try {
-                oStream.write(list)
-            } catch(e: IOException){
-                Log.d(TAG, "run: stream disconnected")
-                cancel()
+
+            Log.i(TAG, "CONNECTEdThread: size sent")*/
+
+            //val lorem = "Ciao Elena ti amo troppo e queto [ un messaggio per vedere se questo cazzo di coso funziona ma a me pare che non stia funzionando affatto e non sso piu cosa scrivere in questo messaggio di prova potrei semplicemente ridurre la dimesnsione del bytearrau"
+            viewModel.selectionToSend?.let {
+                val byte = 1024
+                var left = it.size
+                var off = 0
+                while(left > 0) {
+                    try {
+                        oStream?.write(viewModel.selectionToSend, off, min(left, byte))
+//                oStream?.write(lorem.toByteArray())
+                    } catch(e: IOException) {
+                        Log.d(TAG, "CONNECTEdThread: stream disconnected")
+                        cancel()
+                        onErrorState("Failed to send")
+                    }
+
+                    off += min(left, byte)
+                    left -= min(left, byte)
+                }
+
             }
-            runBlocking(Dispatchers.Main)
-            {Toast.makeText(requireContext(), "INVIO EFFETTUATO", Toast.LENGTH_LONG).show()}
+            runBlocking(Dispatchers.Main) {
+                Toast.makeText(requireContext(), "List sent", Toast.LENGTH_LONG).show()
+            }
+
+            cancel()
             dismiss()
         }
 
         fun cancel(){
             try{
-                socket.close()
+                btSocket?.close()
             }catch(e: IOException) {
                 Log.d(TAG, "run: stream disconnected")
             }
@@ -254,11 +368,14 @@ class BluetoothSendDialog: DialogFragment(), AdapterView.OnItemClickListener{
         private val devices: ArrayList<BluetoothDevice>
     ) :
         ArrayAdapter<BluetoothDevice?>(context, resource, devices as List<BluetoothDevice?>) {
-        private val mLayoutInflater: LayoutInflater
-        private val mViewResourceId: Int
+
+        private val layoutInflater: LayoutInflater =
+            context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+        private val mViewResourceId: Int = resource
+
         @SuppressLint("MissingPermission")
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-            val viewInf = this.mLayoutInflater.inflate(mViewResourceId, null)
+            val viewInf = this.layoutInflater.inflate(mViewResourceId, null)
             val device = devices[position]
             val deviceName = viewInf.findViewById<View>(R.id.device_name) as TextView
             val deviceAddress = viewInf.findViewById<View>(R.id.device_address) as TextView
@@ -268,22 +385,19 @@ class BluetoothSendDialog: DialogFragment(), AdapterView.OnItemClickListener{
             return viewInf
         }
 
-        init {
-            mLayoutInflater =
-                context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-            mViewResourceId = resource
-        }
+
     }
 
     @SuppressLint("MissingPermission")
     override fun onItemClick(av: AdapterView<*>?, view: View?, i: Int, l: Long) {
-        btAdapter.cancelDiscovery()
         val deviceAddress = btDevices.get(i)
-        connectThread = ConnectThread(deviceAddress)
+        Log.i(TAG, "onItemClick: ${deviceAddress.toString()}")
+        onDeviceSelected()
+        clientThread = ClientThread(deviceAddress)
 
         runBlocking {
             launch {
-                runThread(connectThread)
+                runThread(clientThread)
             }
         }
 

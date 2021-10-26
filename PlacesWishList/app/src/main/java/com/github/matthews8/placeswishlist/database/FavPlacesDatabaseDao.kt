@@ -62,6 +62,10 @@ interface   FavPlacesDatabaseDao {
     fun getCitiesWithPlaces(): LiveData<List<CityWithPlaces>>
 
     @Transaction
+    @Query("SELECT * FROM city_table WHERE cityId IN (:cityIds)")
+    fun getCitiesWithPlaces(cityIds: List<Long>): List<CityWithPlaces>
+
+    @Transaction
     @Query("SELECT * FROM city_table WHERE cityId = :cityId")
     fun getCityWithPlacesAndUsers(cityId: Long): LiveData<CityWithPlacesAndUsers?>
 

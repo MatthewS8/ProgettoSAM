@@ -4,7 +4,13 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.*
 import com.github.matthews8.placeswishlist.database.*
+import com.github.matthews8.placeswishlist.database.relations.CityWithPlaces
+import com.google.gson.Gson
+import com.google.gson.JsonObject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.lang.IllegalArgumentException
 
 class MainFragmentViewModel(
@@ -84,9 +90,25 @@ class MainFragmentViewModel(
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        Log.i(TAG,"OnCleared called")
+    var selectionToSend: ByteArray? = null
+    var selectedList: List<Long>? = null
+    var dbCoroutine: Job? = null
+
+    fun getPlacesToSendFromDB(selectedCities: List<Long>){
+        dbCoroutine = viewModelScope.launch {
+            requestSelected(selectedCities)
+        }
+    }
+
+    suspend fun requestSelected(selectedCities: List<Long>){
+        var selectedPlacesToSend: List<CityWithPlaces>? = null
+        withContext(Dispatchers.IO) {
+            selectedPlacesToSend = database.getCitiesWithPlaces(selectedCities)
+            val gson = Gson()
+            val jsonStr = gson.toJson(selectedPlacesToSend)
+            Log.i(TAG, "JSON: $jsonStr")
+            selectionToSend = jsonStr.toByteArray()
+        }
     }
 
     fun deleteSelectedCities(toRemove: List<Long>) {
@@ -98,8 +120,14 @@ class MainFragmentViewModel(
             deleteFromDB(toRemove)
         }
     }
+
     private suspend fun deleteFromDB(cities: List<Long>){
         database.deleteCities(cities)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.i(TAG,"OnCleared called")
     }
 }
 
@@ -110,9 +138,19 @@ class MainFragmentViewModelFactory(
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(MainFragmentViewModel::class.java)){
-            return MainFragmentViewModel(dataSource, application) as T
+            if(INSTANCE == null)
+                INSTANCE = MainFragmentViewModel(dataSource, application)
+            return INSTANCE as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
+    }
+
+    companion object{
+        private var INSTANCE: MainFragmentViewModel? = null
+        fun setInstanceToNull(){
+            INSTANCE = null
+        }
+
     }
 
 }

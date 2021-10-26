@@ -11,10 +11,19 @@
     <string name="bluetooth_Button">Receive from bluetooth</string>
     <string name="bluetooth_enable_fail">You need to enable bluetooth to continue</string>
     <string name="bluetooth_request_denied">You need to grant permissions to use this feature</string>
-    <string name="order_by">Order By...</string>
+    <string name="order_by">Order By…</string>
     <string name="alphabetical">Alphabetical</string>
-    <string name="group_by">Group By...</string>
+    <string name="group_by">Group By…</string>
     <string name="gBcountry">country</string>
     <string name="delete">Delete</string>
     <string name="send_via_bluetooth">Send via Bluetooth</string>
+    <string name="connection_estrablished">Connection established</string>
+    <string name="receiving">Receiving list…</string>
+    <string name="completed_bt">Completed!</string>
+    <string name="waiting_for_connection">Waiting for connection</string>
+    <string name="connecting">Connecting…</string>
+    <string name="title_send_wait">Connected… Preparing list to send</string>
+    <string name="sending_list">Connected.. Sending list</string>
+    <string name="close">Close</string>
+    <string name="tv_username">Who sent you the list?</string>
 </resources>
