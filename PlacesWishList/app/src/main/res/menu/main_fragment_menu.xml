@@ -22,17 +22,6 @@
         </menu>
     </item>
 
-    <item
-        android:id="@+id/group_By"
-        android:title="@string/group_by" >
-
-        <menu>
-            <item
-                android:id="@+id/gB_alpha"
-                android:title="@string/gBcountry" />
-        </menu>
-    </item>
-
 
 
 </menu>

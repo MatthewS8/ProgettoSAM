@@ -32,44 +32,18 @@ import com.github.matthews8.placeswishlist.mainfragment.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class MainFragment : Fragment() {
-
-    /* TODO
-     *  #1 La notifica di refresh della lista avviene tramite l'observer
-     *  di citiesList. Quindi se devo rimuovere qualcosa va tolto da city list
-     *  e questo trigghera il cambiamento oppure alla rimozione del database
-     *  essendo una LiveData potrebbe essere aggiornato automaticamente
-     *  ------------------------------------------------------------------------
-     *  #2 quando aggiorni l'elemento della recycler view bisogna ricordarsi
-     *  di azzerare i cambiamenti eg se l'elemento che esce ha l'omino verde
-     *  sllora quello che lo sostituisce avra l'omino verde e non [ detto che sia giusto
-     *  ------------------------------------------------------------------------
-     *  BLUETOOTH
-     *  -verificare che il bluetooth sia presente sul dispositivo e chiedere i permessi
-     *      all-utilizzo CHECK
-     *  -Richiedere l'attivazione del bluetooth CHECK
-     *  -Se ho pigiato il tasto bluetooth_receive rendere discoverable il dispositivo e
-     *   aspettare che mi arrivi la richiesta di accoppiamento
-     *  -Se ho pigiato, invece, su share allora avviare la ricerca del-altro dispositivo
-     *  -Una volta che l-accoppiamento [ avvenuto inviare/riceve i dati
-     *  -Salvare su database i file ricevuti mosytando prima il color-picker oppure
-     *   mostrare messaggio di "inviato con successo"
-     *  ------------------------------------------------------------------------
-     *  inserire stringhe delle toast nel string.xml
-     */
+    val TAG = "MainFragment"
 
     private lateinit var viewModel: MainFragmentViewModel
     var bluetoothAdapter: BluetoothAdapter? = null
-    var isPresent = false
 
     // mi serve per sapere se voglio ricevere (0) o inviare (1)
     var mBluetoothAction: Int? = null
 
-    val TAG = "OptionsMenuDebug"
-
-
     private var actionMode: ActionMode? = null
     private lateinit var selectionTracker: SelectionTracker<Long> //todo qui si perdono i dati
     private lateinit var selectionObserver: CitySelectionObserver
+
     private lateinit var fab: FloatingActionButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,17 +56,6 @@ class MainFragment : Fragment() {
         inflater.inflate(R.menu.main_fragment_menu, menu)
     }
 
-    override fun onPrepareOptionsMenu(menu: Menu) {
-        Log.i(TAG, "onPrepareOptionsMenu: isPresent is $isPresent")
-        super.onPrepareOptionsMenu(menu)
-        val bluetoothItem = menu.findItem(R.id.action_bluetooth_receive)
-        bluetoothItem.isVisible = isPresent
-    }
-
-    private fun updateBluetoothItem(){
-        Log.i(TAG, "updateBluetoothItem: isPresent is $isPresent")
-        requireActivity().invalidateOptionsMenu()
-    }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId){
@@ -142,7 +105,6 @@ class MainFragment : Fragment() {
             )
         } else {
             permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
-            //todo attivare anche il gps su android 10 in poi
         }
         for(permission in permissions) {
             if(ContextCompat.checkSelfPermission(
@@ -204,7 +166,7 @@ class MainFragment : Fragment() {
                 viewModel.onCityClicked(cityId) },
             iconClickListener =   { cityId ->
                 viewModel.onIconClicked(cityId) }
-        )
+            )
         )
 
         viewModel.orderBy.observe(viewLifecycleOwner, {
@@ -260,18 +222,12 @@ class MainFragment : Fragment() {
         super.onResume()
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
         if(bluetoothAdapter == null){
-            isPresent = false
             Toast.makeText(context, "NO BLUETOOTH FOUND", Toast.LENGTH_LONG).show()
-        } else{
-            isPresent = true
         }
-        updateBluetoothItem()
     }
 
     private fun requestEnable(){
-        //TODO ---- se devo attivare la discoverability questo passaggio non serve
-        // ie posso usare questa funzione per avviare la ricerca dei dispostivi
-        //  mentre per ricevere chiamo direttamente requestDiscoverable()
+
         val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
         Log.i(TAG, "enableBt: launching callback ENABLE")
         enableResultCallback.launch(intent)
@@ -284,7 +240,7 @@ class MainFragment : Fragment() {
                 Toast.makeText(requireContext(), getString(R.string.bluetooth_enable_fail), Toast.LENGTH_LONG).show()
             }
             else{
-                Toast.makeText(requireContext(), "ATTIVOOOO ", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), "Bluetooth enabled ", Toast.LENGTH_LONG).show()
                 findNavController().navigate(MainFragmentDirections.actionMainFragmentToBluetoothSendDialog())
             }
         }
@@ -292,14 +248,10 @@ class MainFragment : Fragment() {
 
     private fun requestDiscoverable() {
         Log.i(TAG, "requestDiscoverable: called now")
+
         val intent = Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE)
         intent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300) //5 min
         discoverableCallback.launch(intent)
-        //TODO devo registrare un broadcast receiver per sapere quando il dispositivo non è piu discoverable
-        //val discoverabilityIntent = IntentFilter(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED)
-        //requireActivity().registerReceiver(discoverabilityReceiver, discoverabilityIntent)
-        // e poi bisogna trovare il momento migliore per fare
-        //unregister receiver
     }
 
     private val discoverableCallback = registerForActivityResult(
@@ -328,6 +280,7 @@ class MainFragment : Fragment() {
             actionMode?.title = "Selected ${selectedCount}"
         }
     }
+
     private class CitySelectionObserver(
         private val selectionTracker: SelectionTracker<Long>,
         private val onSelectionChangedListener: (Int) -> Unit
@@ -341,7 +294,7 @@ class MainFragment : Fragment() {
     
     private inner class CityActionModeCallback: ActionMode.Callback {
         override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-            Log.i(TAG, "onCreateActionMode: infalting menu")
+            Log.i(TAG, "onCreateActionMode: inflating menu")
             val menuInflater = requireActivity().menuInflater
             menuInflater.inflate(R.menu.main_action_mode_menu, menu)
             return true

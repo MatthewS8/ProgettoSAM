@@ -18,7 +18,7 @@ class PlaceFragment : Fragment() {
     private lateinit var viewModel: PlaceFragmentViewModel
     val args: PlaceFragmentArgs by navArgs()
 
-    val TAG: String = "Munichers"
+    val TAG: String = "PlaceFragments"
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
         val binding = DataBindingUtil.inflate<FragmentPlaceBinding>(
@@ -32,16 +32,15 @@ class PlaceFragment : Fragment() {
         binding.placeFragmentViewModel = viewModel
 
         binding.setLifecycleOwner (this)
-        val adapter = PlaceListAdapter() //todo fare qui
+        val adapter = PlaceListAdapter()
 
         binding.placesList.adapter = adapter
         viewModel.placesbyCity.observe(viewLifecycleOwner, Observer { list ->
             adapter.submitList(list?.places)
         })
 
-        //------------------
         requireActivity().actionBar?.title = viewModel.placesbyCity.value?.city!!.name
-        //------------------
+
 
         return binding.root
     }

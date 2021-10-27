@@ -1,19 +1,19 @@
 package com.github.matthews8.placeswishlist.database
 
-import android.content.Context
-import androidx.lifecycle.LiveData
-import com.github.matthews8.placeswishlist.database.relations.CityWithPlacesAndUsers
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.github.matthews8.placeswishlist.database.relations.CityWithPlaces
 
 class DatabaseDaoHelper(val dataInstance: FavPlacesDatabaseDao){
 
+    val TAG = "dbHelper"
     suspend fun insertPlaceAndCityWithOwner(city: City, place: Place? = null, owner: User = User()){
         var cityId = dataInstance.getCityId(cityName = city.name, country = city.country)
+        var username = dataInstance.getUser(owner.username)
+        if(username == null) {
+            dataInstance.insertUser(owner)
+        }
         if(cityId == null) {
             cityId = dataInstance.insertCity(city)
             .also {
-                dataInstance.insertUser(owner)
                 dataInstance.insertCityUser(CityUsersCrossReference(it, owner.username))
             }
         }
@@ -36,6 +36,20 @@ class DatabaseDaoHelper(val dataInstance: FavPlacesDatabaseDao){
             it.visited = !it.visited
             dataInstance.updateCity(city)
         }
+    }
+
+    suspend fun saveUserPlaces(listReceived: Array<CityWithPlaces>?, user: User) {
+        listReceived?.let { list ->
+            for(cityWithPlaces in list){
+                if(cityWithPlaces.places.isEmpty()) {
+                    insertPlaceAndCityWithOwner(cityWithPlaces.city, null, user)
+                } else {
+                    for(places in cityWithPlaces.places)
+                        insertPlaceAndCityWithOwner(cityWithPlaces.city, places, user)
+                }
+            }
+        }
+
     }
 
 }

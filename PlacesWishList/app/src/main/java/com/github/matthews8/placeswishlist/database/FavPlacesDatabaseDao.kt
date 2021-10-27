@@ -5,10 +5,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.room.*
 import com.github.matthews8.placeswishlist.database.relations.CityWithPlaces
 import com.github.matthews8.placeswishlist.database.relations.CityWithPlacesAndUsers
+import com.github.matthews8.placeswishlist.database.relations.CityWithUsers
 import com.github.matthews8.placeswishlist.database.relations.PlaceWithUsers
 
 
-//TODO ho letto su stackoverflow che dovrei usare MutableLiveData per le query con Transaction
 @Dao
 interface   FavPlacesDatabaseDao {
 
@@ -69,6 +69,14 @@ interface   FavPlacesDatabaseDao {
     @Query("SELECT * FROM city_table WHERE cityId = :cityId")
     fun getCityWithPlacesAndUsers(cityId: Long): LiveData<CityWithPlacesAndUsers?>
 
+
+    @Transaction
+    @Query("SELECT * FROM city_table")
+    fun getCitiesWithUsers(): LiveData<List<CityWithUsers>>
+
+    @Query ("SELECT * FROM place_table")
+    fun getPlacesWithUsers(): LiveData<List<PlaceWithUsers>>
+
     @Query("SELECT * FROM place_table WHERE cityId = :cityId")
     fun myPersonalQuery(cityId: Long): LiveData<List<Place>>
 
@@ -92,10 +100,4 @@ interface   FavPlacesDatabaseDao {
 
     @Query("SELECT * FROM city_table ORDER BY cityId DESC")
     fun getCitiesByIdDesc(): LiveData<List<City>>
-
-
-/* TODO
-    Query Ordinamento e filtro
- */
-
 }

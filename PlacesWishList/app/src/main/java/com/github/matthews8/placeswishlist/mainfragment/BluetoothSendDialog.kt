@@ -123,12 +123,6 @@ class BluetoothSendDialog: DialogFragment(), AdapterView.OnItemClickListener{
 
     override fun onDestroy() {
 
-        Log.i(TAG, "onDestroy: dialog")
-        if(viewModel.dbCoroutine?.isActive ?: false){
-            Log.i(TAG, "onDestroy: isActive")
-            viewModel.dbCoroutine?.cancel()
-            Log.i(TAG, "onDestroy: cancelled")
-        }
         viewModel.selectionToSend = null
         requireActivity().unregisterReceiver(enableReceiver)
         requireActivity().unregisterReceiver(btDiscover)
@@ -253,77 +247,9 @@ class BluetoothSendDialog: DialogFragment(), AdapterView.OnItemClickListener{
                 onSelectionReady()
             }
 
-            /*if(viewModel.selectionToSend == null){
-                Log.e(TAG, "sendList: selection is null", )
-                runBlocking(Dispatchers.Main) {
-                    onSelectionPrepare()
-                }
-                Log.i(TAG, "sendList: before join")
-                runBlocking {viewModel.dbCoroutine!!.join()}
-                Log.i(TAG, "sendList: after join")
-            }
-            Log.i(TAG, "CONNECTEdThread: cancelDiscovery ")
-*/
             if(btAdapter.isDiscovering)
                 btAdapter.cancelDiscovery()
 
-           /* if(viewModel.dbCoroutine == null)
-                Log.i(TAG, "sendList: DB COURUTINE IS NULL")
-
-            if(viewModel.dbCoroutine?.isActive == true) {
-                Log.i(TAG, "sendList: VIewModel is active")
-                runBlocking(Dispatchers.Main) {
-                    onSelectionPrepare()
-                }
-                Log.i(TAG, "sendList: before join")
-                runBlocking {viewModel.dbCoroutine!!.join()}
-                Log.i(TAG, "sendList: after join")
-                Log.i( TAG,
-                    "sendList: viewModel Coroutine is completed ${viewModel.dbCoroutine?.isCompleted}"
-                )
-            } else {
-                Log.i(TAG, "sendList: IN the else before if ${viewModel.dbCoroutine?.isCompleted == false}")
-
-                if(viewModel.dbCoroutine?.isCompleted == false) {
-                    Log.i(TAG, "sendList: isNOTcompleted")
-                    cancel()
-                    runBlocking(Dispatchers.Main) {
-                        onErrorState("Failed to load the list")
-                    }
-                }
-                val gson = Gson()
-                val str = viewModel.selectionToSend?.let {String(it)}
-                Log.i(TAG, "SEND IS: $str ")
-
-                val listReceived = gson.fromJson(str, Array<CityWithPlaces>::class.java)
-                listReceived?.let {
-                    Log.i(TAG, "listReceived is: ${it.size}")
-                }
-//                Log.i(TAG, "SEND IS:  ${listReceived[0]}")
-            }
-
-            Log.i(TAG, "CONNECTEdThread: viewModel.selectionToSend is ready")
-            runBlocking(Dispatchers.Main) {
-                onSelectionReady()
-            }*/
-
-//            Log.i(TAG, "CONNECTEdThread: dim initializing ")
-
-//            val dim = viewModel.selectionToSend!!.size
-
-/*            var dimens = "$dim|".toByteArray()
-            Log.i(TAG, "CONNECTEdThread: dim is $dim")
-            try {
-//                oStream?.write(dim.toString().toByteArray(), 0, 4)
-                oStream?.write(dimens)
-            } catch(e: IOException) {
-                Log.d(TAG, "run: stream disconnected")
-                cancel()
-            }
-
-            Log.i(TAG, "CONNECTEdThread: size sent")*/
-
-            //val lorem = "Ciao Elena ti amo troppo e queto [ un messaggio per vedere se questo cazzo di coso funziona ma a me pare che non stia funzionando affatto e non sso piu cosa scrivere in questo messaggio di prova potrei semplicemente ridurre la dimesnsione del bytearrau"
             viewModel.selectionToSend?.let {
                 val byte = 1024
                 var left = it.size
@@ -331,7 +257,6 @@ class BluetoothSendDialog: DialogFragment(), AdapterView.OnItemClickListener{
                 while(left > 0) {
                     try {
                         oStream?.write(viewModel.selectionToSend, off, min(left, byte))
-//                oStream?.write(lorem.toByteArray())
                     } catch(e: IOException) {
                         Log.d(TAG, "CONNECTEdThread: stream disconnected")
                         cancel()

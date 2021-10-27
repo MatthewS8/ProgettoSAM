@@ -10,6 +10,7 @@ import com.github.matthews8.placeswishlist.BuildConfig
 import com.github.matthews8.placeswishlist.R
 import com.github.matthews8.placeswishlist.database.*
 import com.github.matthews8.placeswishlist.database.relations.CityWithUsers
+import com.github.matthews8.placeswishlist.database.relations.PlaceWithUsers
 import com.github.matthews8.placeswishlist.utils.GeocoderResponse
 import com.github.matthews8.placeswishlist.utils.RetrofitImpl
 import com.google.android.gms.maps.GoogleMap
@@ -23,21 +24,11 @@ import retrofit2.Callback
 import retrofit2.Response
 import com.google.android.libraries.places.api.model.Place as gPlace
 
-/*TODO
- * BUG #4: se aggiungo un place di una city che ho gia aggiunto l'app crasha con sto errore
- *      android.database.sqlite.SQLiteConstraintException:
- *      FOREIGN KEY constraint failed (code 787 SQLITE_CONSTRAINT_FOREIGNKEY)
- *      --- non vedo piu questo bug sopra descritto ma ho notato che posso aggiungere
- *      lo stesso identico place piu volte
- * BUG #5: frame count exceeded -- cercare cause e risoluzione
- *      Bisogna testare tanto perche a volte mi toglie ancora il marker dopo la rotazione e a volte
- *      si bugga dopo aver roteato e non riesce piu a trovare nessun indirizzo non so se
- * BUG #6: l-annullamento dell istanza del view model non avviene sempre in modo corretto
- *      Inoltre bisogna controllare la rete e gestire i fallimenti
- */
+
 class MapsFragmentViewModel(
     val database: FavPlacesDatabaseDao,
     application: Application): AndroidViewModel(application) {
+
     val TAG = "MapsFragmentVM"
 
     val placeField: List<gPlace.Field> =
@@ -52,7 +43,7 @@ class MapsFragmentViewModel(
     private val daoHelper = DatabaseDaoHelper(database)
     lateinit var lastMarker: Marker
     var markerList: MutableList<Marker> = mutableListOf() //eliminabile
-    var citiesList = database.getCities()
+    var cityWithUsers: LiveData<List<CityWithUsers>> = database.getCitiesWithUsers()
     var gmap: GoogleMap? = null
 
     var city = MutableLiveData<City?>()
@@ -77,13 +68,18 @@ class MapsFragmentViewModel(
 
     fun initializeMap() {
        viewModelScope.launch(Dispatchers.Default) {
-           Log.i("CityList", "${citiesList.value}")
-           citiesList.value?.forEach {city ->
+           cityWithUsers.value?.forEach {
+               Log.i(TAG, "initializeMap: ${it.city.name}, ${it.users.first().username}")
+           }
+           
+
+           cityWithUsers.value?.forEach {cwu ->
                val mOpt = MarkerOptions()
-                   .position(LatLng(city.lat, city.lng))
-                   .title(city.name)
-                   .snippet(city.country) //TODO
-                   .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)) //TODO <-- to change color
+                   .position(LatLng(cwu.city.lat, cwu.city.lng))
+                   .title(cwu.city.name)
+                   .snippet("${cwu.city.country}, ${cwu.users.first().username}")
+                   .icon(BitmapDescriptorFactory.defaultMarker(
+                       cwu.users.first().color_picked))
                withContext(Dispatchers.Main) {
                    gmap?.let {
                        val marker: Marker? = it.addMarker(mOpt)
@@ -91,6 +87,7 @@ class MapsFragmentViewModel(
                    }
                }
            }
+
            //Serve a riposizionare il marker nel caso di ScreenRotation
            withContext(Dispatchers.Main) {
                if(this@MapsFragmentViewModel::lastMarker.isInitialized) {
@@ -120,21 +117,21 @@ class MapsFragmentViewModel(
         mark?.let {
            lastMarker = it
         }
+
         if(placeG == null) geocodingApiCall(latLng)
         else{
             onPlaceSelected(placeG, latLng)
         }
-        Log.i(TAG, "addMarker: im here nao")
     }
 
     private fun geocodingApiCall(latLng: LatLng) {
         Log.i(TAG, "geocodingApiCall: Geocodind api has been called")
+
         viewModelScope.launch(Dispatchers.IO) {
             (RetrofitImpl.geocodeApi
                 .getGeocoding(
                 key = BuildConfig.GEOCODING_API_KEY,
                 latLng = "${latLng.latitude},${latLng.longitude}",
-//                resultType = "street_address|country|locality|premise|point_of_interest"
             )?.enqueue(object: Callback<GeocoderResponse?>{
 
                 override fun onResponse(
@@ -145,7 +142,6 @@ class MapsFragmentViewModel(
                 }
 
                 override fun onFailure(call: Call<GeocoderResponse?>, t: Throwable) {
-                    //TODO CHECK CONNECTION AND SHOW TOAST
                     Log.e("geocodingApiCall", "onFailure: $t", )
                 }
             }))
@@ -153,13 +149,15 @@ class MapsFragmentViewModel(
     }
 
     private fun onSuccessCall(geocoderResponse: GeocoderResponse?, latLng: LatLng){
+
         Log.i(TAG, "onSuccessCall: parsing the response that is ${geocoderResponse.toString()}")
-        val TAG="loop"
+
         city.value = null
         place = null
 
             geocoderResponse?.let {geoResp ->
                 Log.i(TAG, "Ci sono ${geoResp.results.size} results")
+
                 geoResp.results.forEach {results ->
                     if(city.value == null
                         || city.value?.name!!.isBlank()
@@ -170,7 +168,9 @@ class MapsFragmentViewModel(
                             if(it.types.contains("premise")
                                 || it.types.contains("point_of_interest")
                             ) {
+
                                 Log.i(TAG, "premise or point_ofInterest: ${it.long_name}")
+
                                 if(place == null)
                                     place = Place(
                                         place_id = results.place_id,
@@ -181,7 +181,9 @@ class MapsFragmentViewModel(
 
                             }
                             if(it.types.contains("country")) {
+
                                 Log.i(TAG, "country; ${it.long_name}")
+
                                 if(city.value == null) {
                                     city.value = City(
                                         lat = latLng.latitude,
@@ -207,6 +209,7 @@ class MapsFragmentViewModel(
                                     }
                                 }
                             }
+
                             if(it.types.contains("locality")) {
                                 Log.i(TAG, "locality; ${it.long_name}")
                                 if(city.value == null) {
@@ -237,14 +240,17 @@ class MapsFragmentViewModel(
                     }
                 }
 
-                //todo prendere l-indirizzo
             }
+
         lastMarker.showInfoWindow()
     }
 
     private fun onPlaceSelected(placeG: gPlace, latLng: LatLng){
 
-            val pType = placeG.types?.let {placeTypeSelector(it)}
+            val pType = placeG.types?.let {
+                placeTypeSelector(it)
+            }
+
             if(pType == gPlace.Type.POINT_OF_INTEREST
                 || pType == gPlace.Type.OTHER
             ) {
@@ -304,7 +310,9 @@ class MapsFragmentViewModel(
                     }
                 }
             }
+
         Log.i(TAG, "onPlaceSelected: city value is ${city.value}")
+
         lastMarker.showInfoWindow()
     }
 
@@ -321,33 +329,35 @@ class MapsFragmentViewModel(
     }
 
     fun onAddClicked(){
-        //todo check whether geocoder api is still fetching something --a regola non dovrebbe
-        //TODO Show dialog con scelta e prenderla e poi
         Log.i("TAG", "onAddClicked: place name is ${place?.name}")
 
         if(place != null && place!!.name.isNotBlank()){
             _navigateToDialog.value = true
         } else{
             Log.i("TAG", "onAddClicked: in the else calling database i hope")
+
             GlobalScope.launch(Dispatchers.IO) {
                 daoHelper.insertPlaceAndCityWithOwner(city.value!!)
             }
+
             _navigateToMainFragment.value = true
 
             Log.i("TAG", "onAddClicked: navigate to main is : ${_navigateToMainFragment.value}")
         }
     }
 
+
     fun doneNavigating() {
         _navigateToMainFragment.value = null
     }
+
     fun doneNavigatingToDialog(){
         _navigateToDialog.value = null
     }
 
     fun choiceDone() {
-        val TAG = "ViewModel"
         Log.i(TAG, "choiceDone: choice value is :$choice")
+
         when(choice.value!!){
             0 -> {
                 Log.i("TAG", "choiceDone: choice 0")

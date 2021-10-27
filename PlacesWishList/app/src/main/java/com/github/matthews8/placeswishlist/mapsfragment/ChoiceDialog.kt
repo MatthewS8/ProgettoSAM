@@ -19,9 +19,12 @@ import com.github.matthews8.placeswishlist.database.FavPlacesDatabase
 
 class ChoiceDialog: DialogFragment() {
     val TAG = "Choice Dialog"
+
     private lateinit var viewModel: MapsFragmentViewModel
+
     val args: ChoiceDialogArgs by navArgs()
     var scelta: Int? = null
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.choice_dialog, container, false)
@@ -46,7 +49,6 @@ class ChoiceDialog: DialogFragment() {
         option2.apply {
             text = args.option2
             setOnClickListener {
-//                viewModel.choiceDone()
 
                 Log.i(TAG, "CHOICE DIALOG onCreateView: click listener second option")
                 scelta = 1
@@ -60,8 +62,9 @@ class ChoiceDialog: DialogFragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.i(TAG, "CHOICE DIALOG onDestroy: setting choice to $scelta ")
+
         viewModel.choice.value = scelta
+
         Log.i(TAG, "CHOICE DIALOG onDestroy: viewModelChoice is ${viewModel.choice.value} ")
 
     }

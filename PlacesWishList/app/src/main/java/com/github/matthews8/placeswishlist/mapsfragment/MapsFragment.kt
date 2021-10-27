@@ -10,21 +10,17 @@ import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.navigation.Navigation
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.github.matthews8.placeswishlist.BuildConfig
 import com.github.matthews8.placeswishlist.R
 import com.github.matthews8.placeswishlist.database.FavPlacesDatabase
-import com.github.matthews8.placeswishlist.database.Place
 import com.github.matthews8.placeswishlist.databinding.FragmentMapsBinding
 import com.google.android.gms.common.api.Status
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.AddressComponents
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken
 import com.google.android.libraries.places.api.model.Place as gPlace
 import com.google.android.libraries.places.api.net.PlacesStatusCodes
@@ -34,13 +30,11 @@ import com.google.android.libraries.places.widget.listener.PlaceSelectionListene
 class MapsFragment : Fragment() {
     private lateinit var viewModel: MapsFragmentViewModel
     private lateinit var binding: FragmentMapsBinding
-    val TAG = "Fede_NArgi"
+    val TAG = "MapsFragment"
     val args: MapsFragmentArgs by navArgs()
     private val callback = OnMapReadyCallback {googleMap ->
 
         viewModel.gmap = googleMap
-
-
 
         Log.i("OnMapsCallback", "OnMapsCallback: Callback triggered ")
         googleMap.setOnMapClickListener { latLng ->
@@ -52,7 +46,8 @@ class MapsFragment : Fragment() {
     ): View {
         val application = requireNotNull(this.activity).application
         val dataSource = FavPlacesDatabase.getInstance(application).favPlacesDatabaseDao
-        if(args.fromMainFragment) MapsFrafmentViewModelFactory.setInstanceToNull() //seems to work now but check if there are problems here
+
+        if(args.fromMainFragment) MapsFrafmentViewModelFactory.setInstanceToNull()
         val viewModelFactory = MapsFrafmentViewModelFactory(dataSource, application)
         viewModel = ViewModelProvider(this, viewModelFactory)
             .get(MapsFragmentViewModel::class.java)
@@ -63,12 +58,13 @@ class MapsFragment : Fragment() {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_maps,container, false)
         binding.mapsFragmentViewModel = viewModel
 
-        viewModel.citiesList.observe(viewLifecycleOwner, Observer {
+        viewModel.cityWithUsers.observe(viewLifecycleOwner, {
             if(viewModel.gmap != null && it != null) {
                 viewModel.initializeMap()
             }
             Log.i(TAG, "onCreateView: citiesList trigger")
         })
+
         viewModel.navigateToMainFragment.observe(viewLifecycleOwner, Observer {
             if(it != null) {
                 findNavController().navigate(MapsFragmentDirections.actionMapsFragmentToMainFragment())
@@ -106,18 +102,18 @@ class MapsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         val token = AutocompleteSessionToken.newInstance()
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         val acFrag: AutocompleteSupportFragment =
             childFragmentManager.findFragmentById(R.id.autocomplete_fragment) as AutocompleteSupportFragment
-//        acFrag.setTypeFilter(TypeFilter.ESTABLISHMENT)
         acFrag.setPlaceFields(viewModel.placeField)
         mapFragment?.getMapAsync(callback)
         acFrag.setOnPlaceSelectedListener(object : PlaceSelectionListener{
             override fun onPlaceSelected(place: gPlace) {
-                //todo- ------------------------------
-                Log.i("PlaceSelected",
-                    "place: ${place.name}, ${place.address} ${place.latLng} ${place.addressComponents} ${place.types}")
+                Log.i(TAG,"place: ${place.name}, ${place.address} " +
+                        "${place.latLng} ${place.addressComponents} ${place.types}")
+
                 viewModel.addMarker(place.latLng!!, place)
 
                 var zoom = 10f
@@ -145,12 +141,4 @@ class MapsFragment : Fragment() {
         })
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        Log.i(TAG, "onDestroy: viewModel ${viewModel.choice.value}")
-        //To avoid the view model reset due to screen rotation
-//        if(viewModel.choice.value != null) {
-//            MapsFrafmentViewModelFactory.setInstanceToNull()
-//        }
-    }
 }

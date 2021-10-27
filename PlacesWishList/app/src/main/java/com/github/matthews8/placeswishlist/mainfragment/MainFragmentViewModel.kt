@@ -25,15 +25,19 @@ class MainFragmentViewModel(
      *  name asc 0 desc 1
      *  added asc 2 desc 3
      */
+    private var previousOrderBy = 0
     var orderBy = MutableLiveData<Int?>()
 
     //TODO BUG strano comportamento se ordino la lista mi fa solo un ordinamento parziale
     //  credo che il problema sia nella sequenza eventi tra ricezione della lista e registrazione del observer
     fun orderByName(){
-        //TODO verificare SE VIENE SETTATO OGNI VOLta
         orderBy.value = when(orderBy.value) {
             0 -> 1
-            else -> 0
+            1 -> 0
+            else -> {
+                //null
+                0
+            }
         }
         orderList()
     }
@@ -56,21 +60,6 @@ class MainFragmentViewModel(
         }
     }
 
-//    init{
-//        //aggiungo un utente al database con una citta e un place
-//        val munich = City(lat = 48.1373932, lng = 11.5754485, name = "München",
-//        country = "Germany")
-//        val marienplatz = Place(place_id = "ChIJLWM3jSROqEcRswsOX7NRrd4",
-//        name = "Marienplatz", address = "Marienplatz, 80331 München, Germany",
-//            type = com.google.android.libraries.places.api.model.Place.Type.POINT_OF_INTEREST, cityId = 0L)
-//        val gerardo = User(username = "Gerardo", color_picked = BitmapDescriptorFactory.HUE_VIOLET)
-//
-//        val dao = DatabaseDaoHelper(database)
-//        viewModelScope.launch (Dispatchers.IO) {
-//            dao.insertPlaceAndCityWithOwner(city = munich, place = marienplatz, owner = gerardo)
-//        }
-//    }
-
     private val _navigateToPlaceList = MutableLiveData<Long?>()
     val navigateToPlaceList: LiveData<Long?>
         get() = _navigateToPlaceList
@@ -85,31 +74,14 @@ class MainFragmentViewModel(
 
     fun onIconClicked(cityId: Long){
         viewModelScope.launch {
-            DatabaseDaoHelper(database) //, getApplication<Application>().applicationContext)
+            DatabaseDaoHelper(database)
                 .cityVisitedToggle(cityId)
         }
     }
 
     var selectionToSend: ByteArray? = null
     var selectedList: List<Long>? = null
-    var dbCoroutine: Job? = null
 
-    fun getPlacesToSendFromDB(selectedCities: List<Long>){
-        dbCoroutine = viewModelScope.launch {
-            requestSelected(selectedCities)
-        }
-    }
-
-    suspend fun requestSelected(selectedCities: List<Long>){
-        var selectedPlacesToSend: List<CityWithPlaces>? = null
-        withContext(Dispatchers.IO) {
-            selectedPlacesToSend = database.getCitiesWithPlaces(selectedCities)
-            val gson = Gson()
-            val jsonStr = gson.toJson(selectedPlacesToSend)
-            Log.i(TAG, "JSON: $jsonStr")
-            selectionToSend = jsonStr.toByteArray()
-        }
-    }
 
     fun deleteSelectedCities(toRemove: List<Long>) {
         Log.i(TAG, "deleteSelectedCities: received this list")
@@ -128,6 +100,11 @@ class MainFragmentViewModel(
     override fun onCleared() {
         super.onCleared()
         Log.i(TAG,"OnCleared called")
+    }
+
+    suspend fun saveUserPlaces(listReceived: Array<CityWithPlaces>?, user: User) {
+        Log.i(TAG, "saveUserPlaces: list ${listReceived.toString()}, user : ${user.toString()}")
+        DatabaseDaoHelper(database).saveUserPlaces(listReceived, user)
     }
 }
 

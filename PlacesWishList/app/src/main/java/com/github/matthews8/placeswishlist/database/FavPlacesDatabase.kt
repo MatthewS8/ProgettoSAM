@@ -57,5 +57,3 @@ abstract class FavPlacesDatabase: RoomDatabase() {
         }
     }
 }
-
-//todo test the database

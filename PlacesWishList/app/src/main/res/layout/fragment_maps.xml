@@ -15,19 +15,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-
-        <!--    <LinearLayout-->
-        <!--        android:cityId="@+cityId/search_view"-->
-        <!--        android:layout_width="match_parent"-->
-        <!--        android:layout_height="wrap_content"-->
-        <!--        -->
-        <!--        android:layout_marginTop="40dp"-->
-        <!--        app:layout_constraintBottom_toTopOf="@+cityId/map"-->
-        <!--        app:layout_constraintEnd_toEndOf="parent"-->
-        <!--        app:layout_constraintHorizontal_bias="0.0"-->
-        <!--        app:layout_constraintStart_toStartOf="parent"-->
-        <!--        app:layout_constraintTop_toTopOf="parent">-->
-
         <fragment
             android:id="@+id/autocomplete_fragment"
             android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"

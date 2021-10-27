@@ -95,20 +95,4 @@ xmlns:tools="http://schemas.android.com/tools">
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.card.MaterialCardView>
 
-
-
-    <!-- todo notare app:sleepImage="@{sleep}" e anche app:sleepDurationFormatted="@{sleep}"
-            <ImageView
-                android:cityId="@+id/quality_image"
-                android:layout_width="@dimen/icon_size"
-                android:layout_height="60dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="8dp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:srcCompat="@drawable/ic_sleep_5"
-                app:sleepImage="@{sleep}"/>
--->
 </layout>
